@@ -1,0 +1,246 @@
+/**
+ * RPG Maker MZ: 100 Dialogue Segments Benchmark Dataset
+ * Contains 13 distinct characters without pre-labeled roles or relationships,
+ * designed to test and benchmark character persona & pronoun extraction.
+ */
+
+export const RPGMAKER_100_MAP_JSON = JSON.stringify(
+  {
+    displayName: 'Khu Vực Hỗn Hợp: 100 Đoạn Hội Thoại Nhân Vật',
+    events: [
+      null,
+      {
+        id: 1,
+        name: 'Trưởng lão Cedric',
+        pages: [
+          {
+            list: [
+              { code: 401, parameters: ['Young adventurer, the ancient seal on the northern ruins is beginning to crumble.'] },
+              { code: 401, parameters: ['In my eighty years of guarding this valley, I have never seen the blood moon glow so fiercely.'] },
+              { code: 401, parameters: ['Take this warding amulet, traveler. It once belonged to the venerable founders of our order.'] },
+              { code: 401, parameters: ['Do not stray into the fog after dusk. The whispers within will consume your sanity.'] },
+              { code: 401, parameters: ['You remind me of a valiant knight I fought alongside half a century ago.'] },
+              { code: 401, parameters: ['Listen carefully to my advice, for old bones do not have many breaths left in this world.'] },
+              { code: 401, parameters: ['May the ancient earth spirits cradle your steps on the arduous path ahead.'] },
+              { code: 401, parameters: ['Long ago, a celestial serpent fell from the heavens right into the depths of this lake.'] },
+            ],
+          },
+        ],
+      },
+      {
+        id: 2,
+        name: 'Nữ vương Aurelia',
+        pages: [
+          {
+            list: [
+              { code: 401, parameters: ['Bow before the throne of Eldoria, wanderer from distant lands.'] },
+              { code: 401, parameters: ['Who granted you permission to enter the royal sanctuary unannounced?'] },
+              { code: 401, parameters: ['Our kingdom will never yield to the creeping corruption of the northern abyss.'] },
+              { code: 401, parameters: ['My royal decree is absolute: purge the shadow cultists from the imperial capital.'] },
+              { code: 401, parameters: ['Serve the crown with loyalty and distinction, and boundless riches shall be yours.'] },
+              { code: 401, parameters: ['Royal guards, escort this audacious traveler to the high council chamber.'] },
+              { code: 401, parameters: ['We have ruled these lands through famine and dragon fire; we shall endure this night as well.'] },
+              { code: 401, parameters: ['Prove your valor on the battlefield before you presume to request a private audience.'] },
+            ],
+          },
+        ],
+      },
+      {
+        id: 3,
+        name: 'Thợ rèn Borin',
+        pages: [
+          {
+            list: [
+              { code: 401, parameters: ['Hey! Watch your step around the forge, those white-hot sparks will burn right through your boots.'] },
+              { code: 401, parameters: ['You brought genuine dragon scales? Now that is what I call real material to hammer on!'] },
+              { code: 401, parameters: ['A heavy blade without proper quenching is nothing more than an expensive butter knife.'] },
+              { code: 401, parameters: ['Come back tomorrow dawn, I will have your breastplate hammered, reinforced and polished.'] },
+              { code: 401, parameters: ['Ha! That battered broadsword of yours has suffered more dents than an old tavern keg.'] },
+              { code: 401, parameters: ['You want an arcane enchantment socketed into this hilt? That will cost you extra gold, stranger.'] },
+              { code: 401, parameters: ['Hear that crystal-clear ringing tone? That is pure mountain steel singing under my anvil.'] },
+              { code: 401, parameters: ['Keep your weapon oiled after every clash, or morning rust will kill you before the goblins do.'] },
+            ],
+          },
+        ],
+      },
+      {
+        id: 4,
+        name: 'Bé May',
+        pages: [
+          {
+            list: [
+              { code: 401, parameters: ['Mister traveler! Did you see the giant sparkling blue butterfly dancing near the river?'] },
+              { code: 401, parameters: ['My big brother promised he would bring me delicious honey candies from the city market!'] },
+              { code: 401, parameters: ['Are you a legendary superhero? Your polished armor looks so shiny and amazing!'] },
+              { code: 401, parameters: ['Please do not let the scary red-eyed monsters come inside our village flower garden...'] },
+              { code: 401, parameters: ['I picked these wild blue blossoms just for you. Do they smell sweet and pretty?'] },
+              { code: 401, parameters: ['When I grow up, I want to study magic spells and fly a white griffin like in bedtime stories!'] },
+              { code: 401, parameters: ['Mister, is it true that the twinkling stars are tiny crystal lanterns hung up in the night sky?'] },
+              { code: 401, parameters: ['Mommy told me good adventurers must always finish their vegetable soup before going on journeys!'] },
+            ],
+          },
+        ],
+      },
+      {
+        id: 5,
+        name: 'Đại pháp sư Elrond',
+        pages: [
+          {
+            list: [
+              { code: 401, parameters: ['Fascinating... the etheric resonance emitted by this relic far exceeds standard theoretical limits.'] },
+              { code: 401, parameters: ['Step back immediately! Uninitiated hands must never tamper with volatile incantation scrolls.'] },
+              { code: 401, parameters: ['Do you truly comprehend the multidimensional mechanics governing spatial teleportation?'] },
+              { code: 401, parameters: ['I have dedicated forty years in seclusion deciphering the lost glyphs of the Netherese dynasty.'] },
+              { code: 401, parameters: ['Silence! Your mundane footsteps are disturbing my astral communion with the cosmos.'] },
+              { code: 401, parameters: ['The arcane ley lines beneath this ancient citadel are destabilizing at an alarming rate.'] },
+              { code: 401, parameters: ['Procure three phials of purified celestial starlight essence, and I shall fabricate the portal key.'] },
+              { code: 401, parameters: ['Ignorance is infinitely more lethal than any venomous chimera, young wanderer.'] },
+            ],
+          },
+        ],
+      },
+      {
+        id: 6,
+        name: 'Sát thủ Kaelen',
+        pages: [
+          {
+            list: [
+              { code: 401, parameters: ['Tread lightly. One careless step in these shadowy alleyways, and a serrated dagger will pierce your ribs.'] },
+              { code: 401, parameters: ['I care nothing for your righteous crusade. Who is the target, and how much gold is in the coin purse?'] },
+              { code: 401, parameters: ['The shadows never deceive, fool. Someone within your guild sold your movements hours ago.'] },
+              { code: 401, parameters: ['Lower your voice, unless you desire the imperial city watch swarming over our rooftops.'] },
+              { code: 401, parameters: ['A flawless assassination leaves no blood footprints, zero witnesses, and absolutely no remorse.'] },
+              { code: 401, parameters: ['You survived the poison dart ambush in the courtyard garden? Colour me mildly impressed.'] },
+              { code: 401, parameters: ['Never gaze directly into an assassin eyes when the moon enters its dark crescent phase.'] },
+              { code: 401, parameters: ['If anyone interrogates you, you never crossed paths with me, and this clandestine meeting never took place.'] },
+            ],
+          },
+        ],
+      },
+      {
+        id: 7,
+        name: 'Tiểu muội Linh Nhi',
+        pages: [
+          {
+            list: [
+              { code: 401, parameters: ['Huynh trưởng, you have been practicing your sword katas without a single pause since sunrise!'] },
+              { code: 401, parameters: ['Here, I carefully brewed some warm herbal ginseng tea to soothe your sore muscles.'] },
+              { code: 401, parameters: ['No matter what terrible demons lurk inside the mist canyon, I shall always stay by your side.'] },
+              { code: 401, parameters: ['Do you still remember your promise to take me to the imperial lantern gala when the crusade ends?'] },
+              { code: 401, parameters: ['Please do not overexert yourself... Seeing you covered in bleeding scars breaks my fragile heart.'] },
+              { code: 401, parameters: ['Look! The wild peach trees on the eastern mountain ridge have begun to blossom in pink!'] },
+              { code: 401, parameters: ['I prepared extra bundles of healing spirit herbs and placed them in your knapsack just in case.'] },
+              { code: 401, parameters: ['Promise me you will return to our bamboo pavilion safely and without injury, promise me!'] },
+            ],
+          },
+        ],
+      },
+      {
+        id: 8,
+        name: 'Chủ quán trọ Raymond',
+        pages: [
+          {
+            list: [
+              { code: 401, parameters: ['Welcome to the Boar Tusk Tavern! Come in, pull up a sturdy chair and warm your boots by the hearth!'] },
+              { code: 401, parameters: ['We serve the finest dark stout in the entire eastern province, fermented from roasted highland barley.'] },
+              { code: 401, parameters: ['Seeking lodging for the storm? Upper room number four is spotless, dry, and furnished with feather pillows.'] },
+              { code: 401, parameters: ['Keep all fistfights and brawling outside on the cobblestones, folks, or Raymond broom will show you out!'] },
+              { code: 401, parameters: ['You look dreadfully road-weary, traveling friend. Would you fancy a hot clay bowl of rich venison stew?'] },
+              { code: 401, parameters: ['The wandering minstrel bards have been reciting ominous ballads about dragon omens all week long.'] },
+              { code: 401, parameters: ['That will be exactly eight shiny silver coins for five days of full board, hearty breakfasts included.'] },
+              { code: 401, parameters: ['A friendly word of caution: guard your purse string closely around those hooded figures in the back corner.'] },
+            ],
+          },
+        ],
+      },
+      {
+        id: 9,
+        name: 'Thần quan Seraphina',
+        pages: [
+          {
+            list: [
+              { code: 401, parameters: ['May the radiant dawn grace of the Divine Mother bring solace to your weary spirit, my child.'] },
+              { code: 401, parameters: ['Let us join our hands and offer a silent prayer for the fallen sentinels who defended the frontier walls.'] },
+              { code: 401, parameters: ['The consecrated waters bubbling from this holy altar possess the grace to dissolve lingering necrotic curses.'] },
+              { code: 401, parameters: ['Peace be upon your footsteps. What grief and heavy sorrow weigh so overwhelmingly upon your soul?'] },
+              { code: 401, parameters: ['Even in the deepest subterranean gloom, true spiritual faith is a beacon that never diminishes.'] },
+              { code: 401, parameters: ['Kneel and receive this celestial benediction before you descend into the abyssal tomb chambers.'] },
+              { code: 401, parameters: ['Bitterness and vengeance only foster spiritual rot; seek reconciliation and crystalline inner clarity.'] },
+              { code: 401, parameters: ['The sanctuary arches shall forever stand wide open to protect the destitute, the forsaken, and the wounded.'] },
+            ],
+          },
+        ],
+      },
+      {
+        id: 10,
+        name: 'Tướng quân Vane',
+        pages: [
+          {
+            list: [
+              { code: 401, parameters: ['Battalion, attention! Establish a fortified defense perimeter around the supply caravans immediately!'] },
+              { code: 401, parameters: ['A soldier of the Iron Legion never falls back while helpless civilians remain in danger behind our shields!'] },
+              { code: 401, parameters: ['Scout, deliver your forward reconnaissance report at once! What is the enemy battalion strength?'] },
+              { code: 401, parameters: ['Unwavering military discipline is the cornerstone of triumph; treason and desertion shall face swift summary trial.'] },
+              { code: 401, parameters: ['Firm up your stance and steady that halberd, rookie! The berserker shock troops are mounting the ridge!'] },
+              { code: 401, parameters: ['I have buried three hundred brothers-in-arms across these muddy hills; their sacrifice will not be squandered!'] },
+              { code: 401, parameters: ['Sound the bronze war clarions! Order the heavy cavalry division to flank their exposed left wing!'] },
+              { code: 401, parameters: ['Lock your shields and hold the line! For the sovereign banner and the fallen, give the fiends no quarter!'] },
+            ],
+          },
+        ],
+      },
+      {
+        id: 11,
+        name: 'Bác Ba',
+        pages: [
+          {
+            list: [
+              { code: 401, parameters: ['Hey young lad, why are you carrying such heavy bags all alone under this scorching afternoon sun?'] },
+              { code: 401, parameters: ['Come sit on the bamboo porch here, have a drink of sweet fresh coconut water and a slice of melon!'] },
+              { code: 401, parameters: ['Back in my youthful years, rowing a wooden canoe across this wide river was like second nature to me.'] },
+              { code: 401, parameters: ['These paddy fields are desperately waiting for rain; this harsh dry spell is worrying all of us villagers.'] },
+              { code: 401, parameters: ['When you walk past the water coconut bushes by the canal, watch out for green vipers hiding in the shade.'] },
+              { code: 401, parameters: ['You speak so politely and decently, remind me so much of my nephew who left for the capital long ago.'] },
+              { code: 401, parameters: ['Take this bunch of ripe sweet bananas for your bag; eating them will give you stamina for the long journey.'] },
+              { code: 401, parameters: ['Whenever the south wind begins to whistle across the sandbar, schools of catfish swim towards the bay.'] },
+            ],
+          },
+        ],
+      },
+      {
+        id: 12,
+        name: 'Hắc y nhân',
+        pages: [
+          {
+            list: [
+              { code: 401, parameters: ['Hahaha... How utterly pathetic of you mortals to think your puny blades could halt the grand ritual.'] },
+              { code: 401, parameters: ['The obsidian seals of the Nether Gate are fracturing this very instant; your empire doom is carved in stone.'] },
+              { code: 401, parameters: ['Ignorant vermin! You comprehend nothing of the cosmic horrors awakening within the Mariana trench of the void.'] },
+              { code: 401, parameters: ['Surrender the celestial nexus shard this instant, or your flesh and marrow shall be devoured by shadows.'] },
+              { code: 401, parameters: ['Did you genuinely believe your council of elders was unaware that our spies had infiltrated their sanctum?'] },
+              { code: 401, parameters: ['Your fragile mortal sorceries can never tear asunder the impenetrable veil of our eternal gloom.'] },
+              { code: 401, parameters: ['Flee while your trembling legs still carry you, little insects, for the soul harvest has officially commenced.'] },
+              { code: 401, parameters: ['We shall cross paths once again when the eclipse attains its crimson zenith... Remember my warning!'] },
+            ],
+          },
+        ],
+      },
+      {
+        id: 13,
+        name: 'Thám tử Vance',
+        pages: [
+          {
+            list: [
+              { code: 401, parameters: ['Observe the microscopic traces of red clay pressed into the windowsill moulding; the intruder had a limp.'] },
+              { code: 401, parameters: ['A so-called impossible locked-room murder is never truly locked to one who grasps architectural design.'] },
+              { code: 401, parameters: ['The neurotoxin was introduced into the vintage port decanter prior to dinner, not the roasted pheasant.'] },
+              { code: 401, parameters: ['Glaring contradictions in a suspect chronology invariably unmask the frantic desperation of guilt.'] },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  null,
+  2
+);

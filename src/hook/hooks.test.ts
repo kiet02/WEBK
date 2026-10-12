@@ -66,12 +66,12 @@ describe('System Hooks (Global & Hệ thống)', () => {
     expect(typeof useLanguage).toBe('function');
 
     // Kiểm tra dịch Tiếng Việt
-    expect(translate('vi', 'common.welcome')).toBe('Xin chào quý khách');
-    expect(translate('vi', 'checkout.title')).toBe('Thanh toán đơn hàng');
+    expect(translate('vi', 'common.welcome')).toBe('Xin chào');
+    expect(translate('vi', 'home.title')).toBe('Khởi Tạo Ứng Dụng Mới');
 
     // Kiểm tra dịch Tiếng Anh
-    expect(translate('en', 'common.welcome')).toBe('Welcome guest');
-    expect(translate('en', 'checkout.title')).toBe('Order Checkout');
+    expect(translate('en', 'common.welcome')).toBe('Welcome');
+    expect(translate('en', 'home.title')).toBe('Clean Starter Application');
 
     // Kiểm tra fallback với key không tồn tại
     expect(translate('vi', 'unknown.key')).toBe('unknown.key');

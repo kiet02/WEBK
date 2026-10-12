@@ -23,7 +23,7 @@ function getLanguageSnapshot(): SupportedLanguage {
   try {
     const stored = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
     if (stored === 'vi' || stored === 'en') return stored;
-    return navigator.language.startsWith('vi') ? 'vi' : 'en';
+    return 'vi';
   } catch {
     return 'vi';
   }
@@ -67,12 +67,22 @@ export function useLanguage() {
    */
   const t = useCallback(
     (first: TranslationKey | string, second?: unknown): string => {
+      // 1. Kiểm tra tra cứu trong từ điển i18n
+      const translated = translate(language, first as TranslationKey);
+      if (translated !== first) {
+        if (typeof second === 'object' && second !== null) {
+          return translate(language, first as TranslationKey, second as Record<string, string | number>);
+        }
+        return translated;
+      }
+
+      // 2. Dạng truyền trực tiếp: t('Tiếng Việt', 'English')
       if (second !== undefined && typeof second === 'string') {
         return language === 'vi' ? first : second;
       }
 
       const params = typeof second === 'object' && second !== null ? (second as Record<string, string | number>) : undefined;
-      return translate(language, first, params);
+      return translate(language, first as TranslationKey, params);
     },
     [language]
   );

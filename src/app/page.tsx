@@ -1,88 +1,64 @@
 'use client';
 
 import React from 'react';
-import { useRouter } from 'next/navigation';
-import { CheckoutCard } from '@/components/features/checkout';
-import { SystemSettingsBar } from '@/components/features/settings';
 import { Badge } from '@/components/ui/badge';
+import { ThemeToggle } from '@/components/ui/lottie';
+import { LanguageToggle } from '@/components/ui/language';
+import { useLanguage } from '@/hook';
+import { GameTranslatorStudio } from '@/components/game-translator/GameTranslatorStudio';
 
 export default function Home() {
-  const router = useRouter();
-
-  const handlePaymentSuccess = (orderId: string, summary: { total: number }) => {
-    // Chuyển hướng tới trang hoàn tất đơn hàng
-    router.push(`/checkout/success?orderId=${orderId}&total=${summary.total}`);
-  };
+  const { t } = useLanguage();
 
   return (
-    <div
-      className="min-h-screen font-sans flex flex-col justify-between transition-colors duration-200"
-      style={{ backgroundColor: 'var(--theme-bg)', color: 'var(--theme-text)' }}
-    >
-      {/* Header Điều Hướng */}
-      <header
-        className="backdrop-blur sticky top-0 z-50 border-b transition-colors duration-200"
-        style={{
-          backgroundColor: 'color-mix(in srgb, var(--theme-card) 85%, transparent)',
-          borderColor: 'var(--theme-border)',
-        }}
-      >
-        <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-sm transition-colors duration-200"
-              style={{ backgroundColor: 'var(--theme-primary)' }}
-            >
-              S
+    <div className="min-h-dvh font-sans flex flex-col justify-between transition-colors duration-200 text-(--theme-text) dark:bg-zinc-950 bg-zinc-50 dark:text-zinc-100 selection:bg-indigo-500 selection:text-white">
+      {/* Header */}
+      <header className="backdrop-blur-md sticky top-0 z-50 border-b border-zinc-200 dark:border-zinc-800/80 bg-white/80 dark:bg-zinc-950/80 transition-colors">
+        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-linear-to-tr from-indigo-500 to-violet-600 flex items-center justify-center text-white font-black shadow-lg shadow-indigo-500/20 text-lg">
+              🎮
             </div>
-            <span className="font-bold text-base tracking-tight">SmartCheckout</span>
+            <div>
+              <span className="font-extrabold text-base tracking-tight text-zinc-900 dark:text-white">
+                GameLingo AI
+              </span>
+              <span className="hidden sm:inline-block ml-2 text-xs text-zinc-500 dark:text-zinc-400 font-mono">
+                v1.0 • Engine Auto-Detect
+              </span>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Badge variant="success" dot size="sm">
-              Bảo mật 256-bit SSL
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Badge variant="default" dot size="sm">
+              RPG Maker • Ren&apos;Py • Unity
             </Badge>
+            <LanguageToggle />
+            <ThemeToggle />
           </div>
         </div>
       </header>
 
-      {/* Nội dung Màn hình Thanh toán */}
-      <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-8 flex flex-col items-center justify-center">
-        <div className="w-full max-w-md space-y-6">
-          {/* Thanh cài đặt i18n và Bảng màu */}
-          <SystemSettingsBar />
-          <div className="text-center space-y-2">
-            <h1
-              className="text-3xl font-extrabold tracking-tight transition-colors duration-200"
-              style={{ color: 'var(--theme-text)' }}
-            >
-              Thanh toán đơn hàng
-            </h1>
-            <p className="text-sm opacity-70">
-              Xác nhận thông tin mua sắm, áp dụng mã voucher và thanh toán an toàn.
-            </p>
-          </div>
-
-          <CheckoutCard
-            initialSubtotal={350000}
-            customerName="Lê Hoàng Nam"
-            customerEmail="nam.le@example.com"
-            onPaymentSuccess={handlePaymentSuccess}
-          />
-        </div>
+      {/* Main Game Translator Studio */}
+      <main className="flex-1 w-full pb-16">
+        <GameTranslatorStudio />
       </main>
 
       {/* Footer */}
-      <footer
-        className="border-t py-6 text-center text-xs opacity-70 transition-colors duration-200"
-        style={{ borderColor: 'var(--theme-border)' }}
-      >
-        <div className="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p>© 2026 SmartCheckout System. Thiết kế theo tiêu chuẩn Component-Driven Design.</p>
-          <div className="flex gap-4">
-            <span>Storybook</span>
-            <span>Vitest</span>
-            <span>Playwright</span>
+      <footer className="border-t border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-950/50 py-6">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-500 dark:text-zinc-400">
+          <div>
+            {t('home.footerCopyright', '© 2026 GameLingo AI • Multi-Engine Game Localization Studio')}
+          </div>
+          <div className="flex items-center gap-4">
+            <a
+              href="docs/phases/phase-1-game-translation-platform.md"
+              className="hover:text-indigo-500 transition-colors"
+            >
+              Tài liệu Kỹ thuật Phase 1
+            </a>
+            <span>•</span>
+            <span className="font-mono text-[11px]">Safe Tag Shielding Activated</span>
           </div>
         </div>
       </footer>
