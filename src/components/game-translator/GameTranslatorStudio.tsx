@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 'use client';
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
@@ -27,10 +28,13 @@ import {
   translateViaWebFree,
   SpeakerPersona,
   analyzeProjectSpeakers,
+  hasPronounMismatch,
+  autoFixPronouns,
 } from '@/lib/game-translator';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PronounHighlightedText } from './PronounHighlightedText';
 
 export function GameTranslatorStudio() {
   // Current active game project
@@ -53,7 +57,6 @@ export function GameTranslatorStudio() {
 
   // Sync segments and personas when project changes
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSegments(project.segments);
     setPersonas(project.personas || []);
   }, [project]);
@@ -86,8 +89,16 @@ export function GameTranslatorStudio() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'untranslated' | 'translated' | 'reviewed'>('all');
   const [fileFilter, setFileFilter] = useState<string>('all');
+  const [highlightPronounsEnabled, setHighlightPronounsEnabled] = useState(true);
   const [isTranslating, setIsTranslating] = useState(false);
   const [progress, setProgress] = useState<{ completed: number; total: number } | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 20;
+
+  // Reset pagination to page 1 whenever filters or search query change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter, fileFilter, project.id]);
 
   // Modals state
   const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -230,6 +241,15 @@ export function GameTranslatorStudio() {
     });
   }, [segments, statusFilter, fileFilter, searchQuery]);
 
+  // Tab pagination (20 sentences per tab)
+  const totalPages = Math.max(1, Math.ceil(filteredSegments.length / PAGE_SIZE));
+  const safeCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
+  const startIndex = (safeCurrentPage - 1) * PAGE_SIZE;
+  const endIndex = Math.min(startIndex + PAGE_SIZE, filteredSegments.length);
+  const currentTabSegments = useMemo(() => {
+    return filteredSegments.slice(startIndex, endIndex);
+  }, [filteredSegments, startIndex, endIndex]);
+
   // Statistics
   const stats = useMemo(() => {
     const total = segments.length;
@@ -247,8 +267,16 @@ export function GameTranslatorStudio() {
       return (ratio > 160 && s.translation.length > 30) || missingTag || hasChatter || hasChinese;
     }).length;
 
-    return { total, translated, reviewed, untranslated, percentage, totalTags, dirtyCount };
-  }, [segments]);
+    const pronounMismatchCount = segments.filter((s) => {
+      if (!s.translation || s.status === 'untranslated' || !s.speaker) return false;
+      const p = personas.find(
+        (item) => item.speaker.toLowerCase() === s.speaker?.toLowerCase()
+      );
+      return hasPronounMismatch(s.translation, p);
+    }).length;
+
+    return { total, translated, reviewed, untranslated, percentage, totalTags, dirtyCount, pronounMismatchCount };
+  }, [segments, personas]);
 
   // Load a built-in demo project
   const handleLoadSample = (sampleId: string) => {
@@ -321,6 +349,43 @@ export function GameTranslatorStudio() {
       setIsTranslating(false);
       setProgress(null);
     }
+  };
+
+  // Translate only untranslated segments in current tab (20 sentences)
+  const handleTranslateCurrentTab = async () => {
+    const targets = currentTabSegments.filter((s) => s.status === 'untranslated');
+    if (targets.length === 0) return;
+
+    setIsTranslating(true);
+    setProgress({ completed: 0, total: targets.length });
+
+    try {
+      const updatedTargets = await translateSegmentsBatch(targets, aiConfig, (completed, total) => {
+        setProgress({ completed, total });
+      });
+
+      const targetMap = new Map<string, TranslatableSegment>(updatedTargets.map((t) => [t.id, t]));
+      setSegments((prev) => prev.map((s) => targetMap.get(s.id) || s));
+    } finally {
+      setIsTranslating(false);
+      setProgress(null);
+    }
+  };
+
+  // Auto-fix pronouns for all segments in current tab
+  const handleAutoFixPronounsCurrentTab = () => {
+    const tabIds = new Set(currentTabSegments.map((s) => s.id));
+    setSegments((prev) =>
+      prev.map((s) => {
+        if (!tabIds.has(s.id)) return s;
+        const persona = personas.find(
+          (p) => p.speaker.toLowerCase() === s.speaker?.toLowerCase()
+        );
+        if (!persona) return s;
+        const fixed = autoFixPronouns(s.translation, persona);
+        return fixed !== s.translation ? { ...s, translation: fixed } : s;
+      })
+    );
   };
 
   // Translate a single segment
@@ -398,6 +463,43 @@ export function GameTranslatorStudio() {
           ? { ...s, status: s.status === 'reviewed' ? 'translated' : 'reviewed' }
           : s
       )
+    );
+  };
+
+  // Auto-fix pronouns for a single segment
+  const handleAutoFixPronounSingle = (segId: string) => {
+    setSegments((prev) =>
+      prev.map((s) => {
+        if (s.id !== segId || !s.speaker) return s;
+        const p = personas.find(
+          (item) => item.speaker.toLowerCase() === s.speaker?.toLowerCase()
+        );
+        if (!p) return s;
+        const fixed = autoFixPronouns(s.translation, p);
+        return {
+          ...s,
+          translation: fixed,
+          status: fixed.trim().length > 0 ? (s.status === 'reviewed' ? 'reviewed' : 'translated') : 'untranslated',
+        };
+      })
+    );
+  };
+
+  // Auto-fix pronouns for all segments in project
+  const handleAutoFixAllPronouns = () => {
+    setSegments((prev) =>
+      prev.map((s) => {
+        if (!s.translation || !s.speaker) return s;
+        const p = personas.find(
+          (item) => item.speaker.toLowerCase() === s.speaker?.toLowerCase()
+        );
+        if (!p) return s;
+        const fixed = autoFixPronouns(s.translation, p);
+        return {
+          ...s,
+          translation: fixed,
+        };
+      })
     );
   };
 
@@ -527,13 +629,54 @@ export function GameTranslatorStudio() {
       </div>
 
       {/* 2. Project Selector & File Uploader Bar */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         {/* Sample Loaders */}
-        <div className="md:col-span-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4">
-          <div className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-2.5">
-            Dự Án Mẫu Có Sẵn (1-Click Test)
+        <div className="xl:col-span-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2.5">
+            <div className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+              Dự Án Mẫu Có Sẵn (1-Click Test)
+            </div>
+            {/* Quick Download Sample Files */}
+            <div className="flex items-center gap-1.5 text-[11px] text-zinc-500 dark:text-zinc-400 flex-wrap">
+              <span className="font-medium text-zinc-600 dark:text-zinc-300">Tải tệp JSON test:</span>
+              <a
+                href="/samples/Map002_100_dialogues.json"
+                download="Map002_100_dialogues.json"
+                className="text-indigo-600 dark:text-indigo-400 hover:underline font-semibold"
+                title="Tải tệp Map002 chứa 100 câu thoại kiểm thử đại từ xưng hô"
+              >
+                Map002 (100 câu)
+              </a>
+              <span>·</span>
+              <a
+                href="/samples/Actors_sample.json"
+                download="Actors.json"
+                className="text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
+                title="Tải tệp hồ sơ 13 nhân vật"
+              >
+                Actors
+              </a>
+              <span>·</span>
+              <a
+                href="/samples/Items_sample.json"
+                download="Items.json"
+                className="text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
+                title="Tải tệp vật phẩm & thẻ màu"
+              >
+                Items
+              </a>
+              <span>·</span>
+              <a
+                href="/samples/Map001_sample.json"
+                download="Map001.json"
+                className="text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
+                title="Tải tệp sự kiện Map001"
+              >
+                Map001
+              </a>
+            </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
             {SAMPLE_PROJECTS.map((sp) => {
               const isActive = project.name === sp.name;
               return (
@@ -541,8 +684,8 @@ export function GameTranslatorStudio() {
                   key={sp.id}
                   onClick={() => handleLoadSample(sp.id)}
                   className={`text-left p-3 rounded-lg border text-xs transition-all ${isActive
-                      ? 'border-indigo-500 bg-indigo-50/60 dark:bg-indigo-950/40 font-medium text-indigo-900 dark:text-indigo-100 ring-2 ring-indigo-500/20'
-                      : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-900/50 text-zinc-700 dark:text-zinc-300'
+                    ? 'border-indigo-500 bg-indigo-50/60 dark:bg-indigo-950/40 font-medium text-indigo-900 dark:text-indigo-100 ring-2 ring-indigo-500/20'
+                    : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-900/50 text-zinc-700 dark:text-zinc-300'
                     }`}
                 >
                   <div className="font-bold flex items-center justify-between">
@@ -628,6 +771,18 @@ export function GameTranslatorStudio() {
               </div>
             </div>
 
+            {stats.pronounMismatchCount > 0 && (
+              <>
+                <div className="hidden sm:block h-8 w-px bg-zinc-200 dark:bg-zinc-800" />
+                <div className="hidden sm:block">
+                  <div className="text-xs text-rose-500 dark:text-rose-400 font-medium">Lệch Đại Từ</div>
+                  <div className="text-base font-bold text-rose-600 dark:text-rose-400 flex items-center gap-1">
+                    <span>⚠️ {stats.pronounMismatchCount} câu</span>
+                  </div>
+                </div>
+              </>
+            )}
+
             <div className="hidden sm:block h-8 w-px bg-zinc-200 dark:bg-zinc-800" />
 
             <div className="hidden md:block">
@@ -666,6 +821,19 @@ export function GameTranslatorStudio() {
                 className="border-amber-300 dark:border-amber-700 bg-amber-50/50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 hover:bg-amber-100 text-xs sm:text-sm font-semibold"
               >
                 🧹 Dọn Sạch Tràn Khung & Rác ({stats.dirtyCount})
+              </Button>
+            )}
+
+            {stats.pronounMismatchCount > 0 && (
+              <Button
+                variant="outline"
+                size="md"
+                disabled={isTranslating}
+                onClick={handleAutoFixAllPronouns}
+                className="border-violet-300 dark:border-violet-700 bg-violet-50/70 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300 hover:bg-violet-100 text-xs sm:text-sm font-semibold"
+                title="Tự động thay thế các đại từ máy móc (tôi/bạn) theo đúng vai trò nhân vật cho toàn bộ dự án"
+              >
+                🪄 Khớp Đại Từ Chuẩn ({stats.pronounMismatchCount} câu)
               </Button>
             )}
 
@@ -729,25 +897,179 @@ export function GameTranslatorStudio() {
                 key={st}
                 onClick={() => setStatusFilter(st)}
                 className={`text-xs px-3 py-1.5 rounded-lg border transition-colors whitespace-nowrap ${isSelected
-                    ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-950/60 font-semibold text-indigo-700 dark:text-indigo-300'
-                    : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800'
+                  ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-950/60 font-semibold text-indigo-700 dark:text-indigo-300'
+                  : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800'
                   }`}
               >
                 {labels[st]}
               </button>
             );
           })}
+
+          {/* Pronoun Highlight Mode Toggle */}
+          <button
+            type="button"
+            onClick={() => setHighlightPronounsEnabled(!highlightPronounsEnabled)}
+            className={`text-xs px-3 py-1.5 rounded-lg border transition-all whitespace-nowrap flex items-center gap-1.5 ${highlightPronounsEnabled
+              ? 'border-violet-500 bg-violet-50/80 dark:bg-violet-950/70 font-semibold text-violet-700 dark:text-violet-300 ring-2 ring-violet-500/20'
+              : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50'
+              }`}
+            title="Bật/Tắt chế độ tô màu trực quan các đại từ xưng hô đã chuyển đổi"
+          >
+            <span>🎨 Tô Màu Đại Từ</span>
+            <span
+              className={`text-[10px] px-1.5 py-0.2 rounded font-bold ${highlightPronounsEnabled
+                ? 'bg-violet-200 dark:bg-violet-900 text-violet-800 dark:text-violet-200'
+                : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500'
+                }`}
+            >
+              {highlightPronounsEnabled ? 'BẬT' : 'TẮT'}
+            </span>
+          </button>
         </div>
       </div>
 
-      {/* 5. Dual-Pane Translation Rows */}
+      {/* 5. Tab Pagination Navigation Bar (20 câu / Tab) */}
+      <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-3 shadow-xs flex flex-col gap-2.5">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
+              <span>📑 Phân Tab Hội Thoại</span>
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800/60">
+                20 câu / tab
+              </span>
+            </span>
+            <span className="text-xs text-zinc-500 dark:text-zinc-400">
+              {filteredSegments.length > 0 ? (
+                <>
+                  Hiển thị câu <strong>#{startIndex + 1}</strong> – <strong>#{endIndex}</strong> trên tổng số{' '}
+                  <strong>{filteredSegments.length}</strong> câu
+                </>
+              ) : (
+                '0 câu'
+              )}
+            </span>
+          </div>
+
+          {/* Quick tab controls */}
+          <div className="flex items-center gap-2 self-stretch sm:self-auto justify-between sm:justify-end flex-wrap">
+            {/* Quick translate current tab */}
+            {currentTabSegments.some((s) => s.status === 'untranslated') && (
+              <button
+                type="button"
+                onClick={handleTranslateCurrentTab}
+                disabled={isTranslating}
+                className="text-xs px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 transition-colors font-medium flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                title="Chỉ dịch các câu chưa dịch trong tab hiện tại"
+              >
+                <span>⚡ Dịch Tab Này ({currentTabSegments.filter((s) => s.status === 'untranslated').length})</span>
+              </button>
+            )}
+
+            {/* Quick fix pronouns in current tab if any mismatch exists */}
+            {currentTabSegments.some((s) => {
+              const p = personas.find((item) => item.speaker.toLowerCase() === s.speaker?.toLowerCase());
+              return hasPronounMismatch(s.translation, p);
+            }) && (
+                <button
+                  type="button"
+                  onClick={handleAutoFixPronounsCurrentTab}
+                  className="text-xs px-2.5 py-1 rounded-lg bg-violet-50 hover:bg-violet-100 dark:bg-violet-950/60 dark:hover:bg-violet-900/60 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800 transition-colors font-medium flex items-center gap-1 cursor-pointer"
+                  title="Khớp đại từ cho các câu trong tab hiện tại"
+                >
+                  <span>🪄 Sửa Đại Từ Tab Này</span>
+                </button>
+              )}
+
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={safeCurrentPage <= 1}
+                className="text-xs px-2.5 py-1 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors font-medium flex items-center gap-1 cursor-pointer"
+                title="Về tab trước"
+              >
+                ◀ Trước
+              </button>
+              <button
+                type="button"
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={safeCurrentPage >= totalPages}
+                className="text-xs px-2.5 py-1 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors font-medium flex items-center gap-1 cursor-pointer"
+                title="Sang tab tiếp theo"
+              >
+                Sau ▶
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Scrollable Tab Strip */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin pt-0.5">
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => {
+            const isSelected = pageNum === safeCurrentPage;
+            const tStart = (pageNum - 1) * PAGE_SIZE + 1;
+            const tEnd = Math.min(pageNum * PAGE_SIZE, filteredSegments.length);
+            const sliceItems = filteredSegments.slice(tStart - 1, tEnd);
+            const hasMismatch = sliceItems.some((s) => {
+              const p = personas.find((item) => item.speaker.toLowerCase() === s.speaker?.toLowerCase());
+              return hasPronounMismatch(s.translation, p);
+            });
+            const isComplete =
+              sliceItems.length > 0 &&
+              sliceItems.every((s) => s.status === 'translated' || s.status === 'reviewed');
+
+            return (
+              <button
+                key={pageNum}
+                type="button"
+                onClick={() => setCurrentPage(pageNum)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs transition-all shrink-0 cursor-pointer ${isSelected
+                    ? 'border-indigo-600 bg-indigo-600 text-white shadow-xs font-semibold'
+                    : 'border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/80 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-white dark:hover:bg-zinc-800'
+                  }`}
+              >
+                <span>Tab {pageNum}</span>
+                <span
+                  className={`text-[10px] px-1.5 py-0.2 rounded font-mono ${isSelected
+                      ? 'bg-indigo-700/80 text-indigo-100'
+                      : 'bg-zinc-200/70 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300'
+                    }`}
+                >
+                  {tStart}–{tEnd}
+                </span>
+                {hasMismatch && (
+                  <span
+                    className={`text-[10px] font-bold ${isSelected ? 'text-amber-200' : 'text-rose-500'
+                      }`}
+                    title="Có câu bị lệch đại từ trong tab này"
+                  >
+                    ⚠️
+                  </span>
+                )}
+                {!hasMismatch && isComplete && (
+                  <span
+                    className={`text-[10px] font-bold ${isSelected ? 'text-emerald-200' : 'text-emerald-500'
+                      }`}
+                    title="Đã dịch xong toàn bộ tab này"
+                  >
+                    ✓
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 6. Dual-Pane Translation Rows */}
       <div className="flex flex-col gap-3">
         {filteredSegments.length === 0 ? (
           <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-12 text-center text-zinc-500 dark:text-zinc-400">
             Không tìm thấy đoạn hội thoại nào phù hợp với bộ lọc.
           </div>
         ) : (
-          filteredSegments.map((seg, idx) => {
+          currentTabSegments.map((seg, idx) => {
             const isChanged = seg.translation.trim().length > 0;
             const lengthRatio =
               seg.original.length > 0
@@ -755,6 +1077,11 @@ export function GameTranslatorStudio() {
                 : 100;
             const hasLengthWarning = lengthRatio > 160 && seg.translation.length > 30;
             const hasChineseWarning = /[\u4e00-\u9fff]/.test(seg.translation);
+
+            const currentPersona = personas.find(
+              (item) => item.speaker.toLowerCase() === seg.speaker?.toLowerCase()
+            );
+            const hasPronounAlert = hasPronounMismatch(seg.translation, currentPersona);
 
             return (
               <div
@@ -765,7 +1092,7 @@ export function GameTranslatorStudio() {
                 <div className="flex items-center justify-between gap-2 mb-2.5 pb-2 border-b border-zinc-100 dark:border-zinc-800/80 text-xs text-zinc-500 dark:text-zinc-400">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-mono text-[11px] font-semibold text-zinc-400">
-                      #{idx + 1}
+                      #{startIndex + idx + 1}
                     </span>
                     {seg.speaker && (
                       <div className="flex items-center gap-1.5">
@@ -773,9 +1100,7 @@ export function GameTranslatorStudio() {
                           🗣️ {seg.speaker}
                         </Badge>
                         {(() => {
-                          const p = personas.find(
-                            (item) => item.speaker.toLowerCase() === seg.speaker?.toLowerCase()
-                          );
+                          const p = currentPersona;
                           if (!p || (!p.firstPerson && !p.secondPerson)) return null;
                           return (
                             <button
@@ -791,7 +1116,25 @@ export function GameTranslatorStudio() {
                         })()}
                       </div>
                     )}
-                    <span className="text-[11px] font-mono text-zinc-400 truncate max-w-[200px] sm:max-w-xs">
+                    {hasPronounAlert && (
+                      <div className="flex items-center gap-1">
+                        <span
+                          className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 border border-rose-300 dark:border-rose-800 flex items-center gap-1 cursor-help"
+                          title={`Cảnh báo: Bản dịch có chứa đại từ máy móc (tôi/bạn) chưa khớp vai trò ${currentPersona?.role || seg.speaker}!`}
+                        >
+                          ⚠️ Lệch đại từ
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleAutoFixPronounSingle(seg.id)}
+                          className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-violet-100 hover:bg-violet-200 text-violet-800 dark:bg-violet-950 dark:hover:bg-violet-900 dark:text-violet-200 border border-violet-300 dark:border-violet-700 transition-colors flex items-center gap-1 cursor-pointer"
+                          title={`Tự động chuyển đổi sang đại từ chuẩn: "${currentPersona?.firstPerson || ''}" / "${currentPersona?.secondPerson || ''}"`}
+                        >
+                          <span>🪄 Sửa đại từ</span>
+                        </button>
+                      </div>
+                    )}
+                    <span className="text-[11px] font-mono text-zinc-400 truncate max-w-50 sm:max-w-xs">
                       {seg.file}
                     </span>
                     {seg.context && (
@@ -805,8 +1148,8 @@ export function GameTranslatorStudio() {
                     <button
                       onClick={() => handleToggleReviewed(seg.id)}
                       className={`text-[11px] px-2 py-0.5 rounded font-medium transition-colors ${seg.status === 'reviewed'
-                          ? 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300'
-                          : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:text-zinc-700'
+                        ? 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300'
+                        : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:text-zinc-700'
                         }`}
                     >
                       {seg.status === 'reviewed' ? '✓ Đã Duyệt' : 'Duyệt'}
@@ -855,7 +1198,7 @@ export function GameTranslatorStudio() {
                     )}
                   </div>
 
-                  {/* Right: Translation Editor */}
+                  {/* Right: Translation Editor & Pronoun Highlighter */}
                   <div className="flex flex-col justify-between">
                     <div>
                       <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-zinc-400 mb-1">
@@ -896,14 +1239,57 @@ export function GameTranslatorStudio() {
                         placeholder="Nhập bản dịch hoặc bấm 'Dịch AI'..."
                         rows={3}
                         className={`w-full rounded-lg border p-2.5 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/20 ${hasChineseWarning
-                            ? 'border-rose-400 dark:border-rose-700 bg-rose-50/20 dark:bg-rose-950/10 text-zinc-900 dark:text-zinc-100'
-                            : hasLengthWarning
-                              ? 'border-amber-300 dark:border-amber-700 bg-amber-50/20 dark:bg-amber-950/10 text-zinc-900 dark:text-zinc-100'
+                          ? 'border-rose-400 dark:border-rose-700 bg-rose-50/20 dark:bg-rose-950/10 text-zinc-900 dark:text-zinc-100'
+                          : hasLengthWarning
+                            ? 'border-amber-300 dark:border-amber-700 bg-amber-50/20 dark:bg-amber-950/10 text-zinc-900 dark:text-zinc-100'
+                            : hasPronounAlert
+                              ? 'border-rose-300 dark:border-rose-800 bg-rose-50/10 dark:bg-rose-950/10 text-zinc-900 dark:text-zinc-100'
                               : isChanged
                                 ? 'border-indigo-200 dark:border-indigo-900/60 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100'
                                 : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100'
                           }`}
                       />
+
+                      {/* Real-time Pronoun Highlight Inspector */}
+                      {highlightPronounsEnabled && seg.translation.trim().length > 0 && (
+                        <div className="mt-2 p-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-950/70 border border-zinc-200/80 dark:border-zinc-800 text-xs">
+                          <div className="flex items-center justify-between text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 mb-1.5 pb-1 border-b border-zinc-200/60 dark:border-zinc-800/60">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-bold text-violet-700 dark:text-violet-300 flex items-center gap-1">
+                                🎨 Soi Đại Từ Đã Chuyển Đổi
+                              </span>
+                              {currentPersona && (
+                                <span className="text-[10px] text-zinc-400 font-normal">
+                                  ({currentPersona.speaker}: {currentPersona.firstPerson} ➜ {currentPersona.secondPerson})
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2.5 text-[10px] font-normal">
+                              <span className="inline-flex items-center gap-1">
+                                <span className="w-2 h-2 rounded-full bg-violet-500 inline-block"></span>
+                                <span className="text-violet-700 dark:text-violet-300 font-medium">Xưng (Ngôi 1)</span>
+                              </span>
+                              <span className="inline-flex items-center gap-1">
+                                <span className="w-2 h-2 rounded-full bg-cyan-500 inline-block"></span>
+                                <span className="text-cyan-700 dark:text-cyan-300 font-medium">Hô (Ngôi 2)</span>
+                              </span>
+                              {hasPronounAlert && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleAutoFixPronounSingle(seg.id)}
+                                  className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-100 hover:bg-rose-200 dark:bg-rose-950 dark:hover:bg-rose-900 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-800 transition-colors cursor-pointer"
+                                  title={`Tự động sửa các từ xưng hô máy móc sang chuẩn vai trò "${currentPersona?.firstPerson || ''}" ➜ "${currentPersona?.secondPerson || ''}"`}
+                                >
+                                  <span>⚠️ Lệch đại từ ➜ 🪄 Sửa ngay</span>
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-zinc-800 dark:text-zinc-200 text-xs leading-relaxed font-medium">
+                            <PronounHighlightedText text={seg.translation} persona={currentPersona} />
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex items-center justify-between text-[11px] text-zinc-400 mt-1">
@@ -923,6 +1309,43 @@ export function GameTranslatorStudio() {
           })
         )}
       </div>
+
+      {/* Bottom Pagination Strip */}
+      {totalPages > 1 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs shadow-xs">
+          <div className="text-zinc-500 dark:text-zinc-400 text-center sm:text-left">
+            Đang hiển thị Tab <strong className="text-zinc-800 dark:text-zinc-200">{safeCurrentPage}</strong> / {totalPages}{' '}
+            (câu #{startIndex + 1} – #{endIndex} trên tổng số {filteredSegments.length} câu)
+          </div>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              disabled={safeCurrentPage <= 1}
+              onClick={() => {
+                setCurrentPage((p) => Math.max(1, p - 1));
+                window.scrollTo({ top: 350, behavior: 'smooth' });
+              }}
+              className="px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors font-medium flex items-center gap-1 cursor-pointer"
+            >
+              ◀ Tab trước
+            </button>
+            <span className="font-mono text-xs font-semibold px-2 text-zinc-600 dark:text-zinc-400">
+              {safeCurrentPage} / {totalPages}
+            </span>
+            <button
+              type="button"
+              disabled={safeCurrentPage >= totalPages}
+              onClick={() => {
+                setCurrentPage((p) => Math.min(totalPages, p + 1));
+                window.scrollTo({ top: 350, behavior: 'smooth' });
+              }}
+              className="px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors font-medium flex items-center gap-1 cursor-pointer"
+            >
+              Tab sau ▶
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* MODAL 1: AI Settings Modal */}
       {showSettingsModal && (
@@ -1455,14 +1878,14 @@ export function GameTranslatorStudio() {
                               {p.role?.toLowerCase().includes('lão') || p.ageGroup === 'elder'
                                 ? '👴'
                                 : p.role?.toLowerCase().includes('hiệp sĩ')
-                                ? '🛡️'
-                                : p.role?.toLowerCase().includes('pháp sư')
-                                ? '🧙‍♀️'
-                                : p.role?.toLowerCase().includes('vương')
-                                ? '👑'
-                                : p.gender === 'female'
-                                ? '🌸'
-                                : '🗣️'}
+                                  ? '🛡️'
+                                  : p.role?.toLowerCase().includes('pháp sư')
+                                    ? '🧙‍♀️'
+                                    : p.role?.toLowerCase().includes('vương')
+                                      ? '👑'
+                                      : p.gender === 'female'
+                                        ? '🌸'
+                                        : '🗣️'}
                             </span>
                             <span>{p.speaker}</span>
                           </span>

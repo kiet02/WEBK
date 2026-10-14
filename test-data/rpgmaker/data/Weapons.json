@@ -1,0 +1,23 @@
+[
+  null,
+  {
+    "id": 1,
+    "name": "Thánh Kiếm Hoàng Gia",
+    "description": "Thanh kiếm rực rỡ trui rèn cho quân đoàn của \\N[10]. Tăng \\C[1]+55 Tấn Công\\C[0] và tăng sát thương lên quái hắc ám."
+  },
+  {
+    "id": 2,
+    "name": "Dao Găm Bóng Đêm",
+    "description": "Lưỡi đoản kiếm tinh xảo của \\N[6]. Tăng \\C[2]+30 Tốc Độ\\C[0] và 20% khả năng gây xuất huyết."
+  },
+  {
+    "id": 3,
+    "name": "Pháp Trượng Tinh Vân Cổ Xưa",
+    "description": "Pháp bảo huyền bí của \\N[5]. Tăng \\C[5]+75 Ma Lực\\C[0], giảm 15% thời gian tụ khí niệm chú."
+  },
+  {
+    "id": 4,
+    "name": "Búa Tạ Sơn Thạch",
+    "description": "Vũ khí nặng trịch được thợ rèn \\N[3] tôi luyện từ quặng sắt sâu trong lòng núi. Có khả năng làm choáng mục tiêu."
+  }
+]

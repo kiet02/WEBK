@@ -11,7 +11,7 @@ export const OFFLINE_SENTENCE_CATALOG: Record<string, string> = {
   'Be careful, the monsters in the dark forest have ⟦TAG_0⟧poisonous blades⟦TAG_1⟧!':
     'Hãy cẩn thận, những con quái vật trong khu rừng hắc ám sở hữu ⟦TAG_0⟧lưỡi kiếm kịch độc⟦TAG_1⟧!',
   'May the ancient spirits protect your journey.':
-    'Nguyện cầu các cổ linh che chở cho hành trình của bạn.',
+    'Nguyện cầu các cổ linh che chở cho hành trình của ngươi.',
   'The sunlight filtered through the classroom curtains on a quiet afternoon.':
     'Ánh nắng len lỏi qua rèm cửa lớp học vào một buổi chiều yên ả.',
   'Hello, ⟦TAG_0⟧! I have been waiting for you in the library.':

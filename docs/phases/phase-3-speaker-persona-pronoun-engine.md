@@ -1,157 +1,85 @@
-# Phase 3: AI-Powered Speaker Persona & Authentic Pronoun Engine (Đại Từ Nhân Xưng)
+# Giai Đoạn 3: Nhận Diện Nhân Vật & Đại Từ Xưng Hô Tự Nhiên
 
-## 1. Objectives & Motivation
-
-In video game dialogue localization (particularly Japanese RPGs, Visual Novels, Wuxia, and Western Fantasy), a primary quality failure of generic AI translation is the robotic and unnatural rendering of first-person ("I") and second-person ("you") pronouns as **"Tôi - Bạn"**.
-
-- An ancient village elder saying *"Tôi tặng cho bạn thanh kiếm này"* completely destroys narrative immersion.
-- In authentic Vietnamese game localization:
-  - **Trưởng lão / Già làng (Elder)**: Xưng **"Ta"**, gọi **"Ngươi"** hoặc **"Lữ khách"**.
-  - **Hiệp sĩ hoàng gia (Knight / Protector)**: Xưng **"Tôi" / "Thần"**, gọi **"Các hạ" / "Bệ hạ"**.
-  - **Nữ pháp sư / Bạn học (Anime / Visual Novel)**: Xưng **"Tôi" / "Mình" / "Em"**, gọi **"Cậu" / "Anh"**.
-  - **Quân vương / Lãnh chúa (Lord / Monarch)**: Xưng **"Trẫm" / "Ta"**, gọi **"Khanh" / "Ngươi"**.
-  - **Tiên hiệp / Kiếm hiệp (Wuxia)**: Xưng **"Lão phu" / "Tại hạ"**, gọi **"Các hạ" / "Huynh đài"**.
-
-**Phase 3 Objective:**
-Automatically extract all character speakers from game scripts (`MapXXX.json`, `Actors.json`, Ren'Py `define Character(...)`), analyze character roles, age group, gender, and social status using AI (with instant zero-latency heuristic fallback), and inject explicit pronoun constraints into translation prompts across **WebGPU, Python Engine, Gemini, OpenAI, and DeepSeek**.
+> **Tóm tắt trong 1 câu (TL;DR):**  
+> Tự động phân tích xem **"Ai đang nói chuyện với Ai"** để gán cách xưng hô chuẩn xác (Trưởng lão xưng *"Ta – Ngươi"*, Bé gái xưng *"Cháu – Chú"*, Nữ vương xưng *"Trẫm – Khanh"*), xóa sổ hoàn toàn lối dịch máy robot ngô nghê *"Tôi – Bạn"*.
 
 ---
 
-## 2. Architecture & Pipeline
+## 1. 🛑 Vấn Đề Thực Tế (Trước Khi Có Hệ Thống Này)
+
+Trong game RPG hoặc Visual Novel, tiếng Anh chỉ dùng hai từ đơn giản: **"I"** (tôi) và **"You"** (bạn). Khi đưa qua Google Dịch hoặc ChatGPT thông thường:
+
+```text
+❌ Cảnh 1: Một vị bô lão 80 tuổi nói với hiệp sĩ trẻ:
+"Welcome to Eldoria village, brave traveler! I give you this sword."
+➔ Dịch máy: "Chào mừng đến làng! Tôi tặng cho bạn thanh kiếm này."
+(Nghe như hai đồng nghiệp văn phòng đang chào nhau, làm mất sạch không khí game kỳ ảo!)
+
+❌ Cảnh 2: Một cô bé 7 tuổi nói với dũng sĩ:
+"Mister! Did you see the giant butterfly? I picked these flowers for you!"
+➔ Dịch máy: "Chào ông! Bạn có thấy con bướm không? Tôi hái hoa này cho bạn!"
+(Mất hoàn toàn nét ngây thơ, đáng yêu của trẻ nhỏ).
+```
+
+---
+
+## 2. ✨ Giải Pháp Của Chúng Ta (Sau Khi Có Hệ Thống)
+
+Hệ thống tự động đọc hồ sơ nhân vật và gán cặp đại từ phù hợp theo từng bối cảnh:
+
+| Nhân Vật Trong Game | Cách Dịch Máy Cũ ❌ | Cách Dịch Chuẩn Sau Khi Áp Dụng ✅ | Cặp Xưng – Hô |
+| :--- | :--- | :--- | :--- |
+| **Trưởng lão / Già làng (80 tuổi)** | *"Tôi tặng bạn thanh kiếm..."* | *"Lão tặng cậu thanh kiếm này..."* | **Lão / Ta** ➜ **Cậu / Ngươi** |
+| **Bé gái ngây thơ (7 tuổi)** | *"Tôi hái hoa cho bạn..."* | *"Cháu hái hoa này cho chú nè..."* | **Cháu / Em** ➜ **Chú / Anh** |
+| **Nữ vương uy quyền** | *"Tôi ra lệnh cho bạn..."* | *"Trẫm ban sắc lệnh cho dũng sĩ..."* | **Trẫm / Ta** ➜ **Ngươi / Dũng sĩ** |
+| **Thợ rèn người lùn bộc trực** | *"Kiếm của bạn hỏng rồi, tôi sửa cho bạn."* | *"Gươm của nhóc mẻ hết rồi, để ta đập lại cho!"* | **Ta** ➜ **Nhóc / Cậu** |
+| **Tiểu muội / Em gái** | *"Tôi luôn lo lắng cho bạn..."* | *"Muội luôn lo lắng cho huynh..."* | **Muội / Em** ➜ **Huynh / Anh** |
+
+---
+
+## 3. 🔄 Cách Hệ Thống Hoạt Động Trong 3 Bước Đơn Giản
 
 ```mermaid
 flowchart TD
-    subgraph INGESTION["1. Game Script Ingestion"]
-        RPGM["RPG Maker (MapXXX / Actors.json)"]
-        RENPY["Ren'Py (script.rpy Character defines)"]
-        UNITY["Unity / Generic JSON"]
-    end
-
-    subgraph SPEAKER_ANALYSIS["2. Speaker & Persona Analyzer Engine"]
-        EXTRACT["extractUniqueSpeakers()\n• Character Name\n• Dialogue Quote Samples"]
-        HEURISTIC["heuristicAnalyzeSpeaker()\n• Zero-latency local classifier\n• Elder / Knight / Mage / VN archetypes"]
-        AI_ANALYZER["analyzeSpeakerPersonasWithAI()\n• Deep generative role extraction\n• Relationship & tone reasoning"]
-    end
-
-    subgraph PROMPT_COMPILER["3. Dynamic Prompt & Guideline Compiler"]
-        RULES["buildSpeakerPronounPrompt()\nStrict Negative Constraints against 'Tôi - Bạn'"]
-        LINE_GUIDE["formatSpeakerDialogueGuideline()\nPer-segment speaker context pill"]
-    end
-
-    subgraph TRANSLATION_ENGINES["4. Context-Enriched Translation Engines"]
-        WEBGPU["WebGPU (Qwen 0.5B / SmolLM)"]
-        PYTHON["Python Sidecar (Multi-threaded)"]
-        GEMINI["Google Gemini 1.5 Flash"]
-        OPENAI["OpenAI / DeepSeek"]
-    end
-
-    INGESTION --> EXTRACT
-    EXTRACT --> HEURISTIC
-    EXTRACT -.->|API Key Available| AI_ANALYZER
-    HEURISTIC --> RULES
-    AI_ANALYZER --> RULES
-    HEURISTIC --> LINE_GUIDE
-    RULES --> TRANSLATION_ENGINES
-    LINE_GUIDE --> TRANSLATION_ENGINES
+    A["1. Quét Nhân Vật Trong Game\n(Đọc tên từ Map001.json, Actors.json)"] --> B["2. Phân Tích Vai Trò & Tuổi Tác\n(Bô lão, Trẻ em, Hiệp sĩ, Nữ vương)"]
+    B --> C["3. Gán Cặp Đại Từ Chuẩn\n(Ví dụ: Ta - Ngươi, Lão - Cậu)"]
+    C --> D["4. Kích Hoạt Khi Dịch Thuật\n(Bắt buộc AI dịch đúng đại từ đã chọn)"]
+    D --> E["5. Quét Cảnh Báo Lệch Đại Từ\n(Nếu câu nào lỡ có 'tôi/bạn' ➔ Có nút 1-Click sửa ngay)"]
 ```
+
+1. **Bước 1 - Tìm tên người nói:** Hệ thống đọc tên Event trên bản đồ hoặc tệp danh sách nhân vật của game.
+2. **Bước 2 - Phân tích vai vế:** Nhận diện nhân vật là ai (Bô lão già, Hiệp sĩ trung kiên, Bé gái ngây thơ hay Nữ vương).
+3. **Bước 3 - Ràng buộc AI & Kiểm tra tự động:** 
+   - Ép AI dịch theo đúng cặp xưng hô.
+   - Nếu phát hiện câu nào còn sót từ *"tôi - bạn"*, hệ thống sẽ bật cảnh báo màu đỏ **"⚠️ Lệch đại từ"** và cung cấp nút bấm **"🪄 Sửa đại từ"** để tự động sửa ngay trong 1 giây.
 
 ---
 
-## 3. Sequence Flow Diagram
+## 4. 🎮 Hướng Dẫn Sử Dụng Trên Giao Diện
 
-```mermaid
-sequenceDiagram
-    autonumber
-    actor User as User / Localizer
-    participant Studio as GameTranslatorStudio (UI)
-    participant Analyzer as SpeakerAnalyzer Engine
-    participant LLM as Generative AI / Heuristic
-    participant Translator as Translation Service
-    participant Engine as AI Model (WebGPU / Cloud / Python)
-
-    User->>Studio: Ingests Game Project (RPG Maker / Ren'Py)
-    Studio->>Analyzer: extractUniqueSpeakers(segments)
-    Analyzer-->>Studio: Returns Unique Characters & Dialogue Quotes
-    Studio->>Analyzer: analyzeProjectSpeakers(segments, aiConfig)
-    alt API Key Provided
-        Analyzer->>LLM: analyzeSpeakerPersonasWithAI(groups)
-        LLM-->>Analyzer: Returns SpeakerPersona[] JSON
-    else Offline / No Key
-        Analyzer->>LLM: heuristicAnalyzeSpeaker(groups)
-        LLM-->>Analyzer: Returns Default Archetypes
-    end
-    Analyzer-->>Studio: Synced Personas with firstPerson & secondPerson
-    Studio->>User: Renders Pronoun Pills [Ta ➜ Ngươi] & 🎭 Personas Modal
-    User->>Studio: Clicks "Dịch Tất Cả (AI Batch)"
-    Studio->>Translator: translateSegmentsBatch(targets, aiConfig)
-    Translator->>Analyzer: buildSpeakerPronounPrompt(personas)
-    Analyzer-->>Translator: System Prompt with Persona Pronoun Rules
-    Translator->>Engine: Injects Pronoun Rules + Masked Text
-    Engine-->>Translator: Authentic Translated Text (e.g. "Ta ban cho ngươi...")
-    Translator-->>Studio: Updates segments with immersed translations
-```
+1. **Xem & Tùy Chỉnh Danh Sách Nhân Vật:**
+   - Trên thanh công cụ, bấm nút **"🎭 Đại Từ & Nhân Vật"**.
+   - Bảng nhân vật sẽ hiện ra: bạn có thể tự tay sửa từ xưng (Ví dụ: đổi từ *"Ta"* thành *"Lão"*) hoặc từ hô (đổi từ *"Ngươi"* thành *"Cậu"*).
+   - Có thể bấm **"⚡ AI Tự Động Phân Tích"** để máy tự suy luận vai trò của toàn bộ nhân vật.
+2. **Bật / Tắt Chế Độ "🎨 Tô Màu Đại Từ":**
+   - Bấm nút **🎨 Tô Màu Đại Từ** trên thanh lọc.
+   - Từ xưng (Ngôi 1) sẽ được tô màu **Tím**.
+   - Từ hô (Ngôi 2) sẽ được tô màu **Xanh ngọc**.
+   - Giúp bạn nhìn lướt qua là biết ngay nhân vật có xưng hô đúng vai vế hay không!
+3. **Xử Lý Nhanh Khi Bị Lệch Đại Từ:**
+   - Nếu thấy huy hiệu đỏ **"⚠️ Lệch đại từ"**, chỉ cần bấm nút **"🪄 Sửa đại từ"** cạnh câu đó để tự động chuẩn hóa.
+   - Nếu muốn sửa toàn bộ cả dự án, bấm nút **"🪄 Khớp Đại Từ Chuẩn"** ở thanh trên cùng.
 
 ---
 
-## 4. Technical Specifications
+## 5. 💻 Dành Cho Lập Trình Viên (Cấu Trúc Mã Nguồn)
 
-### 4.1. Data Models (`types.ts`)
-
-```typescript
-export interface SpeakerPersona {
-  speaker: string;          // e.g. "Trưởng làng Elden"
-  role: string;             // e.g. "Trưởng làng / Bậc trưởng bối"
-  gender?: 'male' | 'female' | 'neutral';
-  ageGroup?: 'young' | 'adult' | 'elder';
-  firstPerson: string;      // e.g. "Ta", "Tôi", "Mình", "Trẫm", "Lão phu"
-  secondPerson: string;     // e.g. "Ngươi", "Cậu", "Bạn", "Các hạ", "Khanh"
-  relationship?: string;    // e.g. "Bậc trưởng lão nói chuyện với lữ khách"
-  toneInstruction?: string; // e.g. "Trang trọng, từng trải, xưng Ta gọi Ngươi"
-}
-```
-
-### 4.2. Injected Negative Constraints in Prompts
-
-```text
-QUY TẮC ĐẠI TỪ NHÂN XƯNG (XƯNG HÔ) THEO NHÂN VẬT (TUYỆT ĐỐI TUÂN THỦ):
-- [Trưởng làng Elden] (Trưởng lão): Xưng "Ta", gọi đối phương là "Ngươi". Trang trọng, từng trải.
-- [Gareth] (Hiệp sĩ hoàng gia): Xưng "Tôi", gọi đối phương là "Các hạ". Cương trực, bảo vệ chính nghĩa.
-- [Aria] (Nữ pháp sư): Xưng "Tôi", gọi đối phương là "Cậu". Thanh lịch, tự tin.
-- [Eileen] (Bạn học Anime): Xưng "Mình", gọi đối phương là "Cậu". Dễ thương, thân mật.
-
-TUYỆT ĐỐI KHÔNG DỊCH MÁY MÓC 'I - YOU' THÀNH 'TÔI - BẠN' NẾU NHÂN VẬT CÓ ĐẠI TỪ RIÊNG TRÊN ĐÂY.
-```
-
----
-
-## 5. UI Implementation Highlights
-
-1. **Top Quick Action Button**: `🎭 Đại Từ & Nhân Vật ({count})` with live counter.
-2. **Segment Row Persona Pill**: Next to each speaker badge (`🗣️ Trưởng làng Elden`), an interactive pill `[Ta ➜ Ngươi]` displays character address terms and opens the editor upon click.
-3. **Interactive Personas Modal**:
-   - `⚡ AI Tự Động Phân Tích` button: Re-evaluates dialogues using LLM reasoning.
-   - Inline character editor: Quick modifications of `firstPerson`, `secondPerson`, `role`, and `toneInstruction`.
-   - Add Custom Character form: Add newly introduced characters with gender and age tags.
-
----
-
-## 6. 100-Dialogue RPG Maker Benchmark Dataset
-
-To validate persona and pronoun extraction under real-world conditions where **only character names are known but no roles or relationships are provided**, a dedicated 100-dialogue RPG Maker MZ dataset was created in [`src/lib/game-translator/samples/rpgmaker-100-dialogues.ts`](file:///Users/mn20/Projects/Test/src/lib/game-translator/samples/rpgmaker-100-dialogues.ts) (also saved at [`public/samples/Map002_100_dialogues.json`](file:///Users/mn20/Projects/Test/public/samples/Map002_100_dialogues.json)):
-
-| # | Nhân Vật (Speaker) | Vai Trò Phân Tích (Role) | Giới Tính / Tuổi | Xưng (1st) | Hô (2nd) | Sắc Thái Xưng Hô |
-|---|---|---|---|---|---|---|
-| 1 | **Trưởng lão Cedric** | Bậc trưởng bối / Lão nhân | Nam • Già | **Ta** | **Ngươi** | Trang trọng, cảnh báo di tích cổ |
-| 2 | **Nữ vương Aurelia** | Nữ hoàng / Quân vương | Nữ • Trưởng thành | **Trẫm** | **Khanh** | Uy quyền, ban chỉ dụ hoàng gia |
-| 3 | **Thợ rèn Borin** | Thợ rèn / Nghệ nhân đúc | Nam • Trưởng thành | **Tôi** | **Cậu** | Bộc trực, rèn vảy rồng và giáp sắt |
-| 4 | **Bé May** | Cô bé làng quê | Nữ • Trẻ con | **Cháu** | **Chú** | Ngây thơ, thích bướm xanh và hoa |
-| 5 | **Đại pháp sư Elrond** | Pháp sư thông thái | Nam • Trưởng thành | **Ta / Tôi** | **Ngươi / Cậu** | Học thuật bí thuật, cổng không gian |
-| 6 | **Sát thủ Kaelen** | Sát thủ bóng đêm | Nam • Trưởng thành | **Ta** | **Ngươi** | Lạnh lùng, cảnh giác dao găm |
-| 7 | **Tiểu muội Linh Nhi** | Muội muội đồng hành | Nữ • Trẻ tuổi | **Muội** | **Huynh** | Dịu dàng, pha trà sâm, hoa đào |
-| 8 | **Chủ quán trọ Raymond** | Thương nhân / Chủ quán | Nam • Trưởng thành | **Tôi** | **Quý khách** | Niềm nở, bia đen và súp thịt hươu |
-| 9 | **Thần quan Seraphina** | Nữ tu / Thần quan | Nữ • Trưởng thành | **Ta** | **Con** | Từ bi thánh khiết, ban phước lành |
-| 10 | **Tướng quân Vane** | Thống soái thiết kỵ | Nam • Trưởng thành | **Ta** | **Các ngươi** | Kỷ luật thép, lệnh giữ phòng tuyến |
-| 11 | **Bác Ba** | Lão nông Nam Bộ | Nam • Già | **Ta / Bác** | **Ngươi / Cháu** | Mộc mạc, chõng tre, dừa xiêm, xuồng ba lá |
-| 12 | **Hắc y nhân** | Tà giáo đồ / Phản diện | Khác • Trưởng thành | **Ta** | **Ngươi** | Nham hiểm, hiến tế trăng máu |
-| 13 | **Thám tử Vance** | Thám tử điều tra | Nam • Trưởng thành | **Tôi** | **Anh** | Logic, suy luận dấu chân và độc dược |
-
+* **Bộ phân tích vai trò nhân vật:** [`src/lib/game-translator/speaker-analyzer.ts`](file:///Users/mn20/Projects/Test/src/lib/game-translator/speaker-analyzer.ts)
+  * Hàm `extractUniqueSpeakers`: Gom nhóm các câu thoại theo từng người nói.
+  * Hàm `heuristicAnalyzeSpeaker`: Phân loại vai trò tức thì (không tốn token AI) dựa trên từ khóa danh xưng và mẫu câu.
+  * Hàm `analyzeProjectSpeakers`: Gọi AI phân tích sâu quan hệ và sắc thái nhân vật.
+* **Bộ phát hiện và tự động sửa lệch đại từ:**
+  * Hàm `hasPronounMismatch`: Nhận diện các câu dịch còn sót đại từ máy móc *"tôi - bạn"* chưa khớp với vai diễn.
+  * Hàm `autoFixPronouns`: Thuật toán thay thế thông minh có nhận thức ngữ cảnh đầu câu (viết hoa) và vị trí từ.
+* **Component tô màu trực quan:** [`src/components/game-translator/PronounHighlightedText.tsx`](file:///Users/mn20/Projects/Test/src/components/game-translator/PronounHighlightedText.tsx)
+  * Tô màu real-time các đại từ xưng hô trong khung xem trước.

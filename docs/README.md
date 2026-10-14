@@ -6,10 +6,12 @@ Chào mừng bạn đến với kho tài liệu của dự án. Dự án đượ
 
 ## 🛠️ Hướng dẫn & Tiêu chuẩn phát triển (Workflows & Standards)
 
-- **[Giai đoạn 1: Nền tảng Dịch thuật Game Đa Engine](file:///Users/mn20/Projects/Test/docs/phases/phase-1-game-translation-platform.md)**: Đặc tả kỹ thuật, kiến trúc nhận diện engine tự động, đường ống bảo vệ escape code (Tag Guard) và sơ đồ Mermaid luồng dữ liệu.
-- **[Giai đoạn 2: Python Hybrid Accelerator & WebGPU Engine](file:///Users/mn20/Projects/Test/docs/phases/phase-2-python-hybrid-acceleration.md)**: Tích hợp sidecar Python backend đa luồng (2.500+ chuỗi/giây), hardware auto-detect, WebGPU offline AI model và benchmark so sánh.
-- **[Giai đoạn 3: Phân Tích Vai Trò & Đại Từ Nhân Xưng (Speaker Persona & Pronoun Engine)](file:///Users/mn20/Projects/Test/docs/phases/phase-3-speaker-persona-pronoun-engine.md)**: AI phân tích tính cách, tuổi tác, địa vị nhân vật để tạo đại từ phù hợp (Ta - Ngươi, Lão - Cháu, Mình - Cậu) thay thế dịch máy robot "Tôi - Bạn".
+- **[📖 Sổ Tay Hướng Dẫn Sử Dụng (Dành Cho Người Mới Bắt Đầu)](file:///Users/mn20/Projects/Test/docs/USER-GUIDE.md)**: Hướng dẫn dịch game từ A đến Z cực kỳ dễ hiểu, không cần biết lập trình, 3 bước có ngay game tiếng Việt.
+- **[Giai đoạn 1: Nền tảng Dịch thuật Game (Không Làm Hỏng Game)](file:///Users/mn20/Projects/Test/docs/phases/phase-1-game-translation-platform.md)**: Tự động nhận diện game (RPG Maker, Ren'Py, Unity), bảo vệ mã màu/biến số (`\V[1]`, `{i}`), dịch trọn câu và xuất bản vá ZIP chơi ngay.
+- **[Giai đoạn 2: Tăng Tốc Dịch Thuật Bằng Python & WebGPU](file:///Users/mn20/Projects/Test/docs/phases/phase-2-python-hybrid-acceleration.md)**: Giải pháp dịch hàng chục nghìn câu thoại siêu tốc bằng Python đa luồng (50–100 câu/giây) và WebGPU dịch AI miễn phí trên card màn hình.
+- **[Giai đoạn 3: Nhận Diện Nhân Vật & Đại Từ Xưng Hô Tự Nhiên](file:///Users/mn20/Projects/Test/docs/phases/phase-3-speaker-persona-pronoun-engine.md)**: Tự động gán đại từ thuần Việt theo vai vế (Trưởng lão xưng "Ta - Ngươi", Bé gái xưng "Cháu - Chú", Nữ vương xưng "Trẫm - Khanh"), loại bỏ triệt để dịch máy "Tôi - Bạn".
 - **[Quy trình phát triển Component, Storybook & Testing](file:///Users/mn20/Projects/Test/docs/WORKFLOW.md)**: Hướng dẫn chi tiết về cấu trúc co-location, cách tạo Stories, tương tác test với Playwright Chromium và Vitest.
+- **[Kiểm thử Đầu-Cuối E2E với Playwright](file:///Users/mn20/Projects/Test/docs/E2E-TESTING.md)**: Hướng dẫn chạy kiểm thử tự động toàn diện Playwright, các kịch bản nạp file, phân tab, đại từ nhân vật và tích hợp CI/CD.
 
 ---
 

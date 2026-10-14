@@ -1,0 +1,18 @@
+[
+  null,
+  {
+    "id": 1,
+    "name": "Khiên Chắn Thiết Vệ Quân",
+    "description": "Khiên tháp hạng nặng bằng thép núi của quân đoàn \\N[10]. Chặn \\C[3]30% sát thương vật lý\\C[0]."
+  },
+  {
+    "id": 2,
+    "name": "Áo Choàng Hư Không",
+    "description": "Dệt từ tơ bóng đêm của giáo phái Nether. Giảm \\C[4]25% sát thương phép thuật\\C[0]."
+  },
+  {
+    "id": 3,
+    "name": "Áo Giáp Vảy Rồng Đỏ",
+    "description": "Kiệt tác phòng thủ do thợ rèn \\N[3] hoàn thiện. Miễn nhiễm hoàn toàn sát thương thiêu đốt."
+  }
+]

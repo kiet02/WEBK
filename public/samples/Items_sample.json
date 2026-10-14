@@ -1,0 +1,51 @@
+[
+  null,
+  {
+    "id": 1,
+    "name": "Bình Thuốc Hồi Phục Nhỏ",
+    "description": "Dược liệu thảo mộc truyền thống. Hồi phục \\C[3]200 HP\\C[0] tức thì cho đồng đội.",
+    "price": 50
+  },
+  {
+    "id": 2,
+    "name": "Bình Tinh Chất Ma Pháp",
+    "description": "Chiết xuất tinh hoa pha lê xanh. Khôi phục \\C[4]150 MP\\C[0] và tăng tốc độ niệm phép trong 3 lượt.",
+    "price": 120
+  },
+  {
+    "id": 3,
+    "name": "Bùa Hộ Mệnh Cổ Xưa",
+    "description": "Kỷ vật hộ thân được \\N[1] trao tặng. Giảm \\C[2]25% sát thương hắc ám\\C[0] từ tàn tích phương Bắc.",
+    "price": 500
+  },
+  {
+    "id": 4,
+    "name": "Bình Rượu Nanh Heo Rừng",
+    "description": "Đặc sản danh tiếng quán trọ \\N[8]. Uống vào tăng \\C[1]20% sức tấn công\\C[0] nhưng giảm 5% độ chính xác.",
+    "price": 80
+  },
+  {
+    "id": 5,
+    "name": "Thảo Dược Bổ Khí Trúc Lâm",
+    "description": "Thảo dược quý do \\N[7] hái trên rặng núi đông. Giải trừ mọi trạng thái trúng độc và hồi 100 HP.",
+    "price": 60
+  },
+  {
+    "id": 6,
+    "name": "Chìa Khóa Cổng Hư Vô",
+    "description": "Vật phẩm nhiệm vụ giải phong ấn tàn tích. Cần \\V[5] mảnh pha lê tinh tú để kích hoạt trọn vẹn.",
+    "price": 0
+  },
+  {
+    "id": 7,
+    "name": "Nước Dừa Xiêm Bến Sông",
+    "description": "Món quà mộc mạc từ \\N[11]. Uống một gáo mát rượi xua tan mệt mỏi, phục hồi thể lực tức thì.",
+    "price": 15
+  },
+  {
+    "id": 8,
+    "name": "Vảy Rồng Lửa Thượng Cổ",
+    "description": "Vật liệu trui rèn thượng hạng mang đến cho thợ rèn \\N[3] để nâng cấp áo giáp chống lửa cực đại.",
+    "price": 1500
+  }
+]

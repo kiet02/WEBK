@@ -1,0 +1,34 @@
+{
+  "gameTitle": "Huyền Thoại Eldoria: Biên Niên Sử Vương Triều Bị Lãng Quên",
+  "currencyUnit": "G",
+  "locale": "en_US",
+  "versionId": 8392104,
+  "partyMembers": [1, 2, 3, 4],
+  "terms": {
+    "basic": ["Level", "Lv", "HP", "HP", "MP", "MP", "TP", "TP", "EXP", "EXP"],
+    "commands": [
+      "Chiến Đấu",
+      "Bỏ Chạy",
+      "Tấn Công",
+      "Phòng Thủ",
+      "Vật Phẩm",
+      "Kỹ Năng",
+      "Trang Bị",
+      "Trạng Thái",
+      "Đội Hình",
+      "Lưu Game",
+      "Kết Thúc Game",
+      "Tùy Chọn"
+    ],
+    "params": [
+      "Máu Tối Đa",
+      "Năng Lượng",
+      "Sức Tấn Công",
+      "Sức Phòng Thủ",
+      "Ma Lực",
+      "Kháng Phép",
+      "Nhanh Nhẹn",
+      "May Mắn"
+    ]
+  }
+}

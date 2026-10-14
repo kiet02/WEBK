@@ -556,3 +556,240 @@ export function formatSpeakerDialogueGuideline(
 
   return `[NHÂN VẬT: "${p.speaker}" (${p.role}) ➜ BẮT BUỘC Xưng "${p.firstPerson}", Gọi "${p.secondPerson}"]`;
 }
+
+export interface HighlightPronounToken {
+  text: string;
+  isPronoun: boolean;
+  type?: 'first_person' | 'second_person' | 'mismatched_pronoun' | 'other_pronoun';
+  label?: string;
+}
+
+const COMMON_FIRST_PERSON_PRONOUNS: readonly string[] = [
+  'chúng tôi',
+  'chúng ta',
+  'chúng mình',
+  'lão phu',
+  'bổn tọa',
+  'bổn vương',
+  'tại hạ',
+  'tiểu nhân',
+  'tiểu muội',
+  'tiểu đệ',
+  'ta đây',
+  'ta',
+  'tôi',
+  'mình',
+  'tớ',
+  'em',
+  'anh',
+  'con',
+  'cháu',
+  'thần',
+  'trẫm',
+  'bác',
+  'chú',
+  'cô',
+  'đệ',
+  'huynh',
+  'tỷ',
+];
+
+const COMMON_SECOND_PERSON_PRONOUNS: readonly string[] = [
+  'các ngươi',
+  'huynh trưởng',
+  'huynh đài',
+  'tiểu thư',
+  'công tử',
+  'tiểu tử',
+  'quý khách',
+  'chư vị',
+  'tiền bối',
+  'vãn bối',
+  'sư phụ',
+  'đồ nhi',
+  'bệ hạ',
+  'các hạ',
+  'ngươi',
+  'cậu',
+  'bạn',
+  'anh',
+  'chị',
+  'em',
+  'ngài',
+  'khanh',
+  'con',
+  'cháu',
+  'chú',
+  'bác',
+  'chàng',
+  'nàng',
+  'huynh',
+  'muội',
+  'tỷ',
+  'đệ',
+];
+
+/**
+ * Splits translated text into tokens, distinguishing between normal text and
+ * converted/role-specific Vietnamese pronouns for visual auditing and quality checks.
+ */
+export function tokenizePronouns(
+  text: string,
+  persona?: SpeakerPersona
+): HighlightPronounToken[] {
+  if (!text || text.trim().length === 0) return [];
+
+  // Parse persona preferred pronouns
+  const personaFirstList = (persona?.firstPerson || '')
+    .toLowerCase()
+    .split(/[/,]/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const personaSecondList = (persona?.secondPerson || '')
+    .toLowerCase()
+    .split(/[/,]/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  // Check if persona explicitly uses non-robotic pronouns
+  const forbidsRoboticFirst =
+    personaFirstList.length > 0 && !personaFirstList.includes('tôi');
+  const forbidsRoboticSecond =
+    personaSecondList.length > 0 && !personaSecondList.includes('bạn');
+
+  // Gather all unique search terms
+  const allTermsSet = new Set<string>();
+  for (const t of personaFirstList) allTermsSet.add(t);
+  for (const t of personaSecondList) allTermsSet.add(t);
+  for (const t of COMMON_FIRST_PERSON_PRONOUNS) allTermsSet.add(t);
+  for (const t of COMMON_SECOND_PERSON_PRONOUNS) allTermsSet.add(t);
+
+  // Sort by length descending to match multi-word phrases first
+  const sortedTerms = Array.from(allTermsSet).sort(
+    (a, b) => b.length - a.length
+  );
+
+  const escapedPatterns = sortedTerms.map((term) =>
+    term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  );
+
+  // Word boundary matching with Unicode letter isolation
+  const regex = new RegExp(
+    `(?<!\\p{L})(${escapedPatterns.join('|')})(?!\\p{L})`,
+    'giu'
+  );
+
+  const tokens: HighlightPronounToken[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = regex.exec(text)) !== null) {
+    const matchStart = match.index;
+    const matchEnd = regex.lastIndex;
+    const matchedWord = match[0];
+    const lowerWord = matchedWord.toLowerCase();
+
+    // Push preceding normal text if any
+    if (matchStart > lastIndex) {
+      tokens.push({
+        text: text.slice(lastIndex, matchStart),
+        isPronoun: false,
+      });
+    }
+
+    // Determine pronoun type and descriptive label
+    let type: HighlightPronounToken['type'] = 'other_pronoun';
+    let label = `Đại từ: "${matchedWord}"`;
+
+    if (personaFirstList.includes(lowerWord)) {
+      type = 'first_person';
+      label = `Xưng (Ngôi 1): "${matchedWord}" [Đúng vai trò ${persona?.speaker || ''}]`;
+    } else if (personaSecondList.includes(lowerWord)) {
+      type = 'second_person';
+      label = `Hô (Ngôi 2): "${matchedWord}" [Đúng vai trò ${persona?.speaker || ''}]`;
+    } else if (forbidsRoboticFirst && lowerWord === 'tôi') {
+      type = 'mismatched_pronoun';
+      label = `⚠️ Cảnh báo xưng hô máy móc: Nhân vật nên xưng "${persona?.firstPerson}" thay vì "Tôi"`;
+    } else if (forbidsRoboticSecond && lowerWord === 'bạn') {
+      type = 'mismatched_pronoun';
+      label = `⚠️ Cảnh báo xưng hô máy móc: Nhân vật nên gọi "${persona?.secondPerson}" thay vì "Bạn"`;
+    } else if (COMMON_FIRST_PERSON_PRONOUNS.includes(lowerWord)) {
+      type = 'first_person';
+      label = `Đại từ xưng (Ngôi 1): "${matchedWord}"`;
+    } else if (COMMON_SECOND_PERSON_PRONOUNS.includes(lowerWord)) {
+      type = 'second_person';
+      label = `Đại từ hô (Ngôi 2): "${matchedWord}"`;
+    }
+
+    tokens.push({
+      text: matchedWord,
+      isPronoun: true,
+      type,
+      label,
+    });
+
+    lastIndex = matchEnd;
+  }
+
+  // Push remainder text
+  if (lastIndex < text.length) {
+    tokens.push({
+      text: text.slice(lastIndex),
+      isPronoun: false,
+    });
+  }
+
+  return tokens;
+}
+
+/**
+ * Checks whether the translated text contains mismatched or robotic pronouns (e.g. "tôi - bạn" when character is an Elder or Queen)
+ */
+export function hasPronounMismatch(
+  text: string,
+  persona?: SpeakerPersona
+): boolean {
+  if (!text || !persona) return false;
+  const tokens = tokenizePronouns(text, persona);
+  return tokens.some((t) => t.type === 'mismatched_pronoun');
+}
+
+/**
+ * Automatically corrects robotic or mismatched pronouns in a translated sentence
+ * to align with the character's designated persona (e.g., replaces "bạn" with "ngươi" for an Elder).
+ */
+export function autoFixPronouns(
+  text: string,
+  persona?: SpeakerPersona
+): string {
+  if (!text || !persona) return text;
+
+  let result = text;
+  const first = (persona.firstPerson || '').split(/[/,]/)[0].trim();
+  const second = (persona.secondPerson || '').split(/[/,]/)[0].trim();
+
+  // If character should not use "tôi" and has a designated 1st-person pronoun
+  if (first && first.toLowerCase() !== 'tôi') {
+    result = result.replace(/(?<!\p{L})tôi(?!\p{L})/giu, (match) => {
+      if (match[0] === match[0].toUpperCase()) {
+        return first[0].toUpperCase() + first.slice(1);
+      }
+      return first.toLowerCase();
+    });
+  }
+
+  // If character should not use "bạn" and has a designated 2nd-person pronoun
+  if (second && second.toLowerCase() !== 'bạn') {
+    result = result.replace(/(?<!\p{L})bạn(?!\p{L})/giu, (match) => {
+      if (match[0] === match[0].toUpperCase()) {
+        return second[0].toUpperCase() + second.slice(1);
+      }
+      return second.toLowerCase();
+    });
+  }
+
+  return result;
+}
+
+

@@ -1,0 +1,81 @@
+[
+  null,
+  {
+    "id": 1,
+    "name": "Trưởng lão Cedric",
+    "nickname": "Người Canh Giữ Thung Lũng Cổ",
+    "profile": "Vị bô lão 80 tuổi của làng Eldoria, cả đời trông coi phong ấn cổ xưa trên tàn tích phương Bắc. Trầm tĩnh, đức cao vọng trọng và giàu kinh nghiệm."
+  },
+  {
+    "id": 2,
+    "name": "Nữ vương Aurelia",
+    "nickname": "Tối Cao Vương Giả Eldoria",
+    "profile": "Vị nữ vương uy quyền của vương quốc Eldoria, người nắm giữ thần quyền và sắc lệnh tuyệt đối, kiên cường đối đầu hiểm họa hắc ám."
+  },
+  {
+    "id": 3,
+    "name": "Thợ rèn Borin",
+    "nickname": "Bàn Tay Lửa Núi Thép",
+    "profile": "Bậc thầy thợ rèn người lùn với kỹ nghệ trui rèn vảy rồng và thép thần bí. Tính tình bộc trực, thẳng thắn và say mê rèn binh khí."
+  },
+  {
+    "id": 4,
+    "name": "Bé May",
+    "nickname": "Bông Hoa Đồng Nội",
+    "profile": "Cô bé 7 tuổi ngây thơ, thích hái hoa dại và ngắm bướm đêm lung linh, luôn ước mơ được học phép thuật và cưỡi chim ưng hộ vệ."
+  },
+  {
+    "id": 5,
+    "name": "Đại pháp sư Elrond",
+    "nickname": "Bậc Thầy Bí Thuật Thất Truyền",
+    "profile": "Đại pháp sư 40 năm bế quan giải mã cổ văn Netherese, tinh thông định vị cổng không gian và kiểm soát ma pháp trận."
+  },
+  {
+    "id": 6,
+    "name": "Sát thủ Kaelen",
+    "nickname": "Chiếc Bóng Tử Thần",
+    "profile": "Sát thủ bóng tối lão luyện hoạt động trong ngõ hẹp kinh thành, lạnh lùng, vô cảm và luôn hoàn thành mục tiêu không để lại dấu vết."
+  },
+  {
+    "id": 7,
+    "name": "Tiểu muội Linh Nhi",
+    "nickname": "Dược Nữ Trúc Lâm",
+    "profile": "Muội muội hiền hòa, chu đáo luôn đồng hành cùng huynh trưởng qua hiểm nguy, chăm sóc vết thương bằng thảo dược rừng sâu."
+  },
+  {
+    "id": 8,
+    "name": "Chủ quán trọ Raymond",
+    "nickname": "Chủ Quán Nanh Heo Rừng",
+    "profile": "Chủ quán rượu hiếu khách, hóm hỉnh phục vụ bia đen ủ từ lúa mạch cao nguyên và canh hươu nóng hổi cho lữ khách đường xa."
+  },
+  {
+    "id": 9,
+    "name": "Thần quan Seraphina",
+    "nickname": "Ánh Bình Minh Thiêng",
+    "profile": "Nữ thần quan mang thánh ân Mẫu Thần, ban phước lành thanh tẩy và che chở cho những linh hồn bị tổn thương và kiệt sức."
+  },
+  {
+    "id": 10,
+    "name": "Tướng quân Vane",
+    "nickname": "Chỉ Huy Thiết Vệ Quân",
+    "profile": "Vị tướng dạn dày sương gió, thống lĩnh quân đoàn Thiết Vệ với kỷ luật sắt và lòng dũng cảm bảo vệ tuyến phòng thủ biên cương."
+  },
+  {
+    "id": 11,
+    "name": "Bác Ba",
+    "nickname": "Lão Nông Bến Sông",
+    "profile": "Lão nông chân chất miền sông nước Nam Bộ, chèo xuồng ba lá, mời khách nước dừa ngọt mát và dặn dò cẩn thận rắn lục ven bờ dừa nước."
+  },
+  {
+    "id": 12,
+    "name": "Hắc y nhân",
+    "nickname": "Sứ Giả Cổng Hư Vô",
+    "profile": "Kẻ phụng sự giáo phái bóng tối Nether Gate, cuồng tín, ngạo mạn và mưu đồ kích hoạt đại nghi thức ngày nhật thực đỏ."
+  },
+  {
+    "id": 13,
+    "name": "Thám tử Vance",
+    "nickname": "Đôi Mắt Tinh Tường Hoàng Gia",
+    "profile": "Thám tử đại tài phá án bằng phương pháp suy luận sắc bén và quan sát từng hạt đất sét nhỏ nhất tại hiện trường."
+  }
+]

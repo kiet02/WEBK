@@ -10,6 +10,7 @@ import { translateWithPythonEngine } from './python-bridge';
 import { OFFLINE_SENTENCE_CATALOG } from './catalog';
 import { sanitizeAndValidateTranslation } from './sanitizer';
 import {
+  autoFixPronouns,
   buildSpeakerPronounPrompt,
   formatSpeakerDialogueGuideline,
 } from './speaker-analyzer';
@@ -362,6 +363,19 @@ Chỉ trả về JSON array chuỗi đã dịch theo thứ tự.`;
             seg.status = 'translated';
           })
         );
+      }
+    }
+
+    if (config.personas && config.personas.length > 0) {
+      for (const { seg } of maskedItems) {
+        if (seg.speaker && seg.translation) {
+          const persona = config.personas.find(
+            (p) => p.speaker.toLowerCase() === seg.speaker?.toLowerCase()
+          );
+          if (persona) {
+            seg.translation = autoFixPronouns(seg.translation, persona);
+          }
+        }
       }
     }
 

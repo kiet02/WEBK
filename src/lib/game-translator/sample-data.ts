@@ -92,6 +92,31 @@ export const SAMPLE_PROJECTS: SampleProject[] = [
         ),
       },
       {
+        path: 'data/Items.json',
+        content: JSON.stringify(
+          [
+            null,
+            {
+              id: 1,
+              name: 'Lesser Healing Potion',
+              description: 'Restores \\C[3]200 HP\\C[0] immediately. Costs \\V[1] Gold.',
+            },
+            {
+              id: 2,
+              name: 'Pure Mana Elixir',
+              description: 'Restores \\C[4]150 MP\\C[0] and cures silence state.',
+            },
+            {
+              id: 3,
+              name: 'Ancient Warding Amulet',
+              description: 'Gifted by \\N[1]. Reduces dark damage by \\C[2]25%\\C[0].',
+            },
+          ],
+          null,
+          2
+        ),
+      },
+      {
         path: 'data/System.json',
         content: JSON.stringify(
           {

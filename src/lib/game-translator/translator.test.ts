@@ -1,3 +1,5 @@
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import { describe, it, expect } from 'vitest';
 import {
   detectGameEngine,
@@ -14,6 +16,8 @@ import {
   SAMPLE_PROJECTS,
   parseGameProject,
   translateSegmentsBatch,
+  tokenizePronouns,
+  hasPronounMismatch,
 } from './index';
 
 describe('Game Translator Engine Detection', () => {
@@ -585,3 +589,130 @@ describe('Python Accelerator Engine Integration', () => {
     });
   });
 });
+
+describe('RPGMaker Test Data Pack Verification', () => {
+  const dataDir = path.resolve(process.cwd(), 'test-data/rpgmaker/data');
+
+  it('verifies Items.json parses names, descriptions, and preserves color tags', () => {
+    const raw = fs.readFileSync(path.join(dataDir, 'Items.json'), 'utf-8');
+    const segments = extractRPGMakerSegments('data/Items.json', raw);
+    expect(segments.length).toBeGreaterThan(10);
+
+    const potionDesc = segments.find((s) => s.original.includes('200 HP'));
+    expect(potionDesc).toBeDefined();
+    expect(potionDesc?.tags).toContain('\\C[3]');
+    expect(potionDesc?.tags).toContain('\\C[0]');
+
+    // Test reinjection
+    potionDesc!.translation = 'Hồi phục \\C[3]200 HP\\C[0] tức thì cho đồng đội.';
+    const reinjected = injectRPGMakerTranslations(raw, segments);
+    expect(reinjected).toContain('\\\\C[3]200 HP\\\\C[0]');
+    expect(() => JSON.parse(reinjected)).not.toThrow();
+  });
+
+  it('verifies Actors.json parses all 13 characters with profiles and nicknames', () => {
+    const raw = fs.readFileSync(path.join(dataDir, 'Actors.json'), 'utf-8');
+    const segments = extractRPGMakerSegments('data/Actors.json', raw);
+    expect(segments.length).toBeGreaterThanOrEqual(13);
+
+    const aurelia = segments.find((s) => s.original.includes('Nữ vương Aurelia'));
+    expect(aurelia).toBeDefined();
+
+    const elrondProfile = segments.find((s) => s.original.includes('40 năm bế quan'));
+    expect(elrondProfile).toBeDefined();
+  });
+
+  it('verifies Map002.json contains 100 dialogues and parses into full project', () => {
+    const rawMap002 = fs.readFileSync(path.join(dataDir, 'Map002.json'), 'utf-8');
+    const rawActors = fs.readFileSync(path.join(dataDir, 'Actors.json'), 'utf-8');
+    const rawItems = fs.readFileSync(path.join(dataDir, 'Items.json'), 'utf-8');
+    const rawSystem = fs.readFileSync(path.join(dataDir, 'System.json'), 'utf-8');
+
+    const project = parseGameProject('Eldoria Full Test Pack', [
+      { name: 'Map002.json', path: 'data/Map002.json', content: rawMap002, size: rawMap002.length },
+      { name: 'Actors.json', path: 'data/Actors.json', content: rawActors, size: rawActors.length },
+      { name: 'Items.json', path: 'data/Items.json', content: rawItems, size: rawItems.length },
+      { name: 'System.json', path: 'data/System.json', content: rawSystem, size: rawSystem.length },
+    ]);
+
+    expect(project.engine.engine).toBe('rpg_maker_mvmz');
+    // 100 dialogues + 1 display name + actors + items + system title
+    expect(project.segments.length).toBeGreaterThan(120);
+    expect(project.files.length).toBe(4);
+  });
+});
+
+describe('Pronoun Highlighting & Tokenizer Engine', () => {
+  it('correctly tokenizes elder dialogue into first-person Ta and second-person Ngươi', () => {
+    const elderPersona = {
+      speaker: 'Trưởng lão Cedric',
+      role: 'Bậc trưởng bối',
+      gender: 'male' as const,
+      ageGroup: 'elder' as const,
+      firstPerson: 'Ta',
+      secondPerson: 'Ngươi',
+    };
+
+    const text = 'Hỡi dũng sĩ, ta trao cho ngươi tín vật cổ xưa của bộ tộc!';
+    const tokens = tokenizePronouns(text, elderPersona);
+
+    const firstPersonToken = tokens.find((t) => t.isPronoun && t.text.toLowerCase() === 'ta');
+    expect(firstPersonToken).toBeDefined();
+    expect(firstPersonToken?.type).toBe('first_person');
+
+    const secondPersonToken = tokens.find((t) => t.isPronoun && t.text.toLowerCase() === 'ngươi');
+    expect(secondPersonToken).toBeDefined();
+    expect(secondPersonToken?.type).toBe('second_person');
+  });
+
+  it('correctly tokenizes multi-word Vietnamese pronouns like Huynh trưởng and Tiểu muội', () => {
+    const sisterPersona = {
+      speaker: 'Tiểu muội Linh Nhi',
+      role: 'Muội muội',
+      gender: 'female' as const,
+      ageGroup: 'young' as const,
+      firstPerson: 'Muội',
+      secondPerson: 'Huynh',
+    };
+
+    const text = 'Huynh trưởng ơi, muội đã nấu trà nóng cho huynh rồi nè!';
+    const tokens = tokenizePronouns(text, sisterPersona);
+
+    // Multi-word phrase "Huynh trưởng" should match as a single token, not fragmented
+    const huynhTruong = tokens.find((t) => t.text === 'Huynh trưởng');
+    expect(huynhTruong).toBeDefined();
+    expect(huynhTruong?.isPronoun).toBe(true);
+
+    const muoi = tokens.find((t) => t.text.toLowerCase() === 'muội');
+    expect(muoi?.type).toBe('first_person');
+
+    const huynh = tokens.find((t) => t.text.toLowerCase() === 'huynh');
+    expect(huynh?.type).toBe('second_person');
+  });
+
+  it('detects and flags robotic tôi - bạn pronoun mismatches for historical/royal roles', () => {
+    const queenPersona = {
+      speaker: 'Nữ vương Aurelia',
+      role: 'Quân vương',
+      gender: 'female' as const,
+      ageGroup: 'adult' as const,
+      firstPerson: 'Trẫm',
+      secondPerson: 'Khanh',
+    };
+
+    // Authentic translation with correct royal pronouns
+    const goodTranslation = 'Trẫm lệnh cho các khanh lập tức xuất binh!';
+    expect(hasPronounMismatch(goodTranslation, queenPersona)).toBe(false);
+
+    // Robotic translation with tôi - bạn
+    const badTranslation = 'Tôi yêu cầu bạn và các người xuất binh ngay lập tức!';
+    expect(hasPronounMismatch(badTranslation, queenPersona)).toBe(true);
+
+    const tokens = tokenizePronouns(badTranslation, queenPersona);
+    const mismatched = tokens.filter((t) => t.type === 'mismatched_pronoun');
+    expect(mismatched.length).toBeGreaterThan(0);
+    expect(mismatched.some((t) => t.text.toLowerCase() === 'tôi')).toBe(true);
+    expect(mismatched.some((t) => t.text.toLowerCase() === 'bạn')).toBe(true);
+  });
+});
+

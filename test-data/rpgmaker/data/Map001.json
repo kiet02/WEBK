@@ -1,0 +1,104 @@
+{
+  "displayName": "Làng Khởi Đầu Eldoria (Starting Town)",
+  "events": [
+    null,
+    {
+      "id": 1,
+      "name": "Trưởng làng Elden",
+      "pages": [
+        {
+          "list": [
+            {
+              "code": 401,
+              "parameters": ["Welcome to Eldoria village, brave traveler! Take this \\V[1] Gold."]
+            },
+            {
+              "code": 102,
+              "parameters": [
+                ["Accept Quest", "Decline", "Ask for Information"],
+                0
+              ]
+            },
+            {
+              "code": 401,
+              "parameters": ["Be careful, the monsters in the dark forest have \\C[2]poisonous blades\\C[0]!"]
+            },
+            {
+              "code": 401,
+              "parameters": ["May the ancient spirits protect your journey through the realm."]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Hiệp sĩ Gareth",
+      "pages": [
+        {
+          "list": [
+            {
+              "code": 401,
+              "parameters": ["Greetings, traveler! I am Gareth of the Royal Vanguard."]
+            },
+            {
+              "code": 401,
+              "parameters": ["Stand behind my shield if the dark horde breaches the eastern gates!"]
+            },
+            {
+              "code": 401,
+              "parameters": ["Our patrol spotted strange tracks near the cavern entrance yesterday."]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Pháp sư Aria",
+      "pages": [
+        {
+          "list": [
+            {
+              "code": 401,
+              "parameters": ["The magical mana streams around this altar feel strangely distorted."]
+            },
+            {
+              "code": 401,
+              "parameters": ["Here, study this \\C[1]Arcane Barrier\\C[0] scroll to shield against curses."]
+            },
+            {
+              "code": 401,
+              "parameters": ["Do not hesitate to call upon my magic whenever danger approaches."]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Thương nhân Raymond",
+      "pages": [
+        {
+          "list": [
+            {
+              "code": 401,
+              "parameters": ["Looking to buy fresh supplies or sell your dungeon spoils, traveler?"]
+            },
+            {
+              "code": 102,
+              "parameters": [
+                ["Buy Supplies", "Sell Spoils", "Just Browsing"],
+                0
+              ]
+            },
+            {
+              "code": 401,
+              "parameters": ["I have the finest highland potions and enchanted arrows in stock!"]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
